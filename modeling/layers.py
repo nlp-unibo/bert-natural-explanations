@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow_addons as tfa
 
-
+# TODO: re-write in torch
 class MemorySentenceEmbedder(tf.keras.layers.Layer):
 
     def __init__(

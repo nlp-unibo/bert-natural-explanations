@@ -1,8 +1,9 @@
 import math
 import os
 from functools import partial
-from typing import Iterable, Any, Dict
+from typing import Iterable, Any, Dict, Optional
 
+import numpy as np
 import torch as th
 from sklearn.preprocessing import LabelEncoder
 from torch.nn.utils.rnn import pad_sequence
@@ -10,6 +11,7 @@ from torch.utils.data import DataLoader
 from torchdata.datapipes.map import SequenceWrapper
 from torchtext.data import get_tokenizer
 from torchtext.vocab import build_vocab_from_iterator
+from transformers import AutoTokenizer
 
 from cinnamon_core.core.data import FieldDict
 from cinnamon_core.utility import logging_utility
@@ -18,40 +20,6 @@ from cinnamon_generic.nlp.components.processor import TokenizerProcessor
 
 
 # Input/Output
-
-class TextProcessor(Processor):
-
-    def clean_text(
-            self,
-            text: str
-    ):
-        return text.lower().strip()
-
-    def process(
-            self,
-            data: FieldDict,
-            is_training_data: bool = False
-    ) -> FieldDict:
-        if 'text' not in data:
-            raise RuntimeError(f'Expected a text field in data...')
-
-        data.text = [self.clean_text(text) for text in data.text]
-        return data
-
-
-class KBProcessor(TextProcessor):
-
-    def process(
-            self,
-            data: FieldDict,
-            is_training_data: bool = False
-    ) -> FieldDict:
-        if 'kb' not in data:
-            raise RuntimeError(f'Expected a kb field in data...')
-
-        data.kb = {key: [self.clean_text(kb_text) for kb_text in value] for key, value in data.kb.items()}
-        return data
-
 
 class LabelProcessor(Processor):
 
@@ -88,62 +56,42 @@ class LabelProcessor(Processor):
 
 # Tokenizer
 
-class THTextTokenizer(TokenizerProcessor):
+
+class HFTokenizer(Processor):
 
     def __init__(
             self,
             **kwargs
     ):
         super().__init__(**kwargs)
-        self.tokenizer = get_tokenizer(**self.tokenizer_args)
-        self.pad_token = '<PAD>'
-        self.unk_token = '<UNK>'
+        self.tokenizer = None
+        self.vocabulary = None
+        self.vocab_size = None
 
-    def fit(
+    def run(
             self,
-            data: FieldDict,
-    ):
-        if 'text_sequence' not in data:
-            raise RuntimeError(f'Expected a text_sequence field in data...')
+            data: Optional[FieldDict] = None,
+            is_training_data: bool = False
+    ) -> Optional[FieldDict]:
+        # Efficiency
+        if self.tokenizer is None:
+            self.tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=self.hf_model_name)
+            self.vocabulary = self.tokenizer.get_vocab()
+            self.vocab_size = len(self.vocabulary)
 
-        self.vocabulary = build_vocab_from_iterator(iterator=[self.tokenizer(text) for text in data.text_sequence],
-                                                    specials=[self.pad_token, self.unk_token],
-                                                    special_first=True)
-        self.vocab_size = len(self.vocabulary)
+        data.add(name='pad_token_id', value=self.tokenizer.pad_token_id)
+        data.add(name='input_ids', value=[])
+        data.add(name='attention_mask', value=[])
+        data.add(name='id', value=[])
 
-    def finalize(
-            self
-    ):
-        """
-        If specified, it loads embedding model and computes pre-trained embedding matrix.
-        """
+        text = data['text']
+        tok_info = self.tokenizer(text, **self.tokenization_args)
 
-        if self.embedding_type is not None:
-            self.load_embedding_model()
+        data.input_ids.extend(tok_info['input_ids'])
+        data.attention_mask.extend(tok_info['attention_mask'])
+        data.id.extend(np.arange(len(text)).tolist())
 
-            if self.embedding_model is None:
-                raise RuntimeError(f'Expected a pre-trained embedding model. Got {self.embedding_model}')
-
-            vocabulary, added_tokens = self.build_embeddings_matrix(vocabulary=self.vocabulary.get_stoi(),
-                                                                    embedding_model=self.embedding_model,
-                                                                    embedding_dimension=self.embedding_dimension)
-            for token in added_tokens:
-                self.vocabulary.append_token(token)
-
-    def tokenize(
-            self,
-            text: Iterable[str],
-            remove_special_tokens: bool = False
-    ) -> Any:
-        return [[self.vocabulary[token] if token in self.vocabulary else self.vocabulary[self.unk_token]
-                 for token in self.tokenizer(seq)] for seq in text]
-
-    def detokenize(
-            self,
-            ids: Iterable[int],
-            remove_special_tokens: bool = False
-    ) -> Iterable[str]:
-        return [' '.join([self.vocabulary[idx] for idx in seq]) for seq in ids]
+        return data
 
 
 # Model

@@ -58,7 +58,7 @@ class ToSLoader(DataLoader):
     ) -> Tuple[Optional[Any], Optional[Any], Optional[Any]]:
         df = self.load_data()
 
-        return df, None, None
+        return df[:self.samples_amount], None, None
 
     def parse(
             self,
