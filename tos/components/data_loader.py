@@ -70,12 +70,12 @@ class ToSLoader(DataLoader):
 
         return_field = FieldDict()
         return_field.add(name='text',
-                         value=data['text'].values,
+                         value=data['text'].values.tolist(),
                          type_hint=Iterable[str],
                          tags={'text'},
                          description='Clause text to classify')
         return_field.add(name='label',
-                         value=data[self.category].values,
+                         value=data[self.category].values.tolist(),
                          type_hint=Iterable[str],
                          tags={'label'},
                          description='Unfair clause category')

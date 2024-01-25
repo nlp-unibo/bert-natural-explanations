@@ -3,9 +3,10 @@ from typing import Type, Dict
 import torch as th
 
 from cinnamon_core.core.configuration import C
-from cinnamon_core.core.registry import Registry, register
+from cinnamon_core.core.registry import Registry, register, RegistrationKey
 from cinnamon_generic.configurations.model import NetworkConfig
-from components.model import HFBaseline
+from components.model import HFBaseline, HFMem
+from configurations.model import MemoryNetworkConfig
 
 
 class HFBaselineConfig(NetworkConfig):
@@ -27,7 +28,7 @@ class HFBaselineConfig(NetworkConfig):
                    type_hint=bool,
                    description='If enabled, the HF model weights are freezed.')
         config.add(name='num_classes',
-                   value=2,
+                   value=1,
                    type_hint=int,
                    description='Number of classification classes.',
                    tags={'model'},
@@ -53,10 +54,48 @@ class HFBaselineConfig(NetworkConfig):
         return config
 
 
+class HFMemConfig(MemoryNetworkConfig):
+
+    @classmethod
+    def get_default(
+            cls: Type[C]
+    ) -> C:
+        config = super().get_default()
+
+        for key, value in HFBaselineConfig.get_default().items():
+            config[key] = value
+
+        config.lookup_weights = [
+            32
+        ]
+        config.get('kb_sampler').variants = [
+            RegistrationKey(name='sampler',
+                            tags={'full'},
+                            namespace='nle/tos'),
+            RegistrationKey(name='sampler',
+                            tags={'uniform'},
+                            namespace='nle/tos'),
+            RegistrationKey(name='sampler',
+                            tags={'attention'},
+                            namespace='nle/tos'),
+            RegistrationKey(name='sampler',
+                            tags={'gain'},
+                            namespace='nle/tos'),
+        ]
+
+        return config
+
+
 @register
 def register_models():
     Registry.add_and_bind_variants(config_class=HFBaselineConfig,
                                    component_class=HFBaseline,
                                    name='model',
                                    tags={'hf', 'baseline'},
+                                   namespace='nle/tos')
+
+    Registry.add_and_bind_variants(config_class=HFMemConfig,
+                                   component_class=HFMem,
+                                   name='model',
+                                   tags={'hf', 'memory'},
                                    namespace='nle/tos')

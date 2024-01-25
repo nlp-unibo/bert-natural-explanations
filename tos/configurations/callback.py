@@ -18,7 +18,8 @@ class ToSEarlyStoppingConfig(THEarlyStoppingConfig):
     ) -> C:
         config = super().get_default()
 
-        config.patience = 15
+        config.patience = 5
+        config.monitor = 'val_clf_f1'
 
         return config
 

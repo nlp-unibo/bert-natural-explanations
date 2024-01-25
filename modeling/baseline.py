@@ -25,6 +25,7 @@ class M_HFBaseline(th.nn.Module):
         self.dropout = th.nn.Dropout(p=dropout_rate)
         self.pre_classifier = th.nn.Linear(in_features=self.embedding_config.hidden_size,
                                            out_features=self.embedding_config.hidden_size)
+        self.pre_activation = th.nn.ReLU()
         self.classifier = th.nn.Linear(out_features=num_classes,
                                        in_features=self.embedding_config.hidden_size)
 
@@ -48,7 +49,7 @@ class M_HFBaseline(th.nn.Module):
         input_embedding = th.mean(embeddings, dim=1)
 
         pre_logits = self.pre_classifier(input_embedding)
-        pre_logits = th.nn.ReLU(pre_logits)
+        pre_logits = self.pre_activation(pre_logits)
         if self.training:
             pre_logits = self.dropout(pre_logits)
         logits = self.classifier(pre_logits)

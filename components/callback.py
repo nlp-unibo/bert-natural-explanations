@@ -73,3 +73,15 @@ class WandDB(Callback):
             return
 
         wandb.finish()
+
+
+class SamplerPriorityUpdater(Callback):
+
+    def on_epoch_end(
+            self,
+            logs=None
+    ):
+        epoch = logs['epoch']
+        if epoch > 0 and epoch % self.update_rate == 0:
+            self.component.kb_sampler.update_priority()
+            logging_utility.logger.info('Updating sampler priority...')

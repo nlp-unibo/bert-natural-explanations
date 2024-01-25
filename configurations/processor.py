@@ -1,6 +1,6 @@
 from cinnamon_core.core.configuration import Configuration
 from cinnamon_core.core.registry import Registry, register
-from components.processor import LabelProcessor, ResultsProcessor, THClassifierProcessor
+from components.processor import LabelProcessor, ResultsProcessor, THClassifierProcessor, PosWeightProcessor
 
 
 @register
@@ -13,6 +13,12 @@ def register_processor_configurations():
                           namespace='nle')
 
     # Model
+    Registry.add_and_bind(config_class=Configuration,
+                          component_class=PosWeightProcessor,
+                          name='processor',
+                          tags={'weights'},
+                          namespace='nle')
+
     Registry.add_and_bind(config_class=Configuration,
                           component_class=THClassifierProcessor,
                           name='processor',

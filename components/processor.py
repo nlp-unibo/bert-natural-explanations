@@ -1,7 +1,7 @@
 import math
 import os
 from functools import partial
-from typing import Iterable, Any, Dict, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 import torch as th
@@ -9,14 +9,12 @@ from sklearn.preprocessing import LabelEncoder
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 from torchdata.datapipes.map import SequenceWrapper
-from torchtext.data import get_tokenizer
-from torchtext.vocab import build_vocab_from_iterator
 from transformers import AutoTokenizer
 
 from cinnamon_core.core.data import FieldDict
 from cinnamon_core.utility import logging_utility
 from cinnamon_generic.components.processor import Processor
-from cinnamon_generic.nlp.components.processor import TokenizerProcessor
+from sklearn.utils.class_weight import compute_class_weight
 
 
 # Input/Output
@@ -94,7 +92,61 @@ class HFTokenizer(Processor):
         return data
 
 
+class HFKBTokenizer(HFTokenizer):
+
+    def __init__(
+            self,
+            **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.kb = None
+
+    def run(
+            self,
+            data: Optional[FieldDict] = None,
+            is_training_data: bool = False
+    ) -> Optional[FieldDict]:
+        data = super().run(data=data, is_training_data=is_training_data)
+
+        kb = data['kb']
+        tok_info = self.tokenizer(kb, **self.tokenization_args)
+        self.kb = FieldDict({
+            'input_ids': tok_info['input_ids'],
+            'attention_mask': tok_info['attention_mask'],
+            'pad_token_id': data.pad_token_id
+        })
+
+        return data
+
+
 # Model
+
+class PosWeightProcessor(Processor):
+
+    def __init__(
+            self,
+            **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.pos_weight = None
+
+    def clear(
+            self
+    ):
+        self.pos_weight = None
+
+    def run(
+            self,
+            data: Optional[FieldDict] = None,
+            is_training_data: bool = False
+    ) -> Optional[FieldDict]:
+        if is_training_data:
+            self.pos_weight = compute_class_weight(y=data.label,
+                                                   class_weight='balanced',
+                                                   classes=[0, 1])[1]
+
+        return data
+
 
 class ModelProcessor(Processor):
 
@@ -132,7 +184,7 @@ class ModelProcessor(Processor):
 
         # output
         y = {
-            'label': th.tensor(y, dtype=th.long).to(device),
+            'label': th.tensor(y, dtype=th.float32).to(device),
         }
 
         return x, y
@@ -179,7 +231,7 @@ class THClassifierProcessor(Processor):
             data: Any,
             is_training_data: bool = False
     ) -> Any:
-        data['logits'] = th.argmax(data['logits'], dim=-1)
+        data['logits'] = th.round(th.sigmoid(data['logits']))
         return data
 
 

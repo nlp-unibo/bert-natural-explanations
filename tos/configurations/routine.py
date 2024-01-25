@@ -35,10 +35,35 @@ class ToSRoutineConfig(NLERoutineConfig):
 
         return config
 
+    @classmethod
+    def get_kb_config(
+            cls
+    ):
+        config = cls.get_default()
+
+        config.pre_processor = RegistrationKey(name='processor',
+                                               tags={'kb'},
+                                               namespace='nle/tos')
+
+        config.get('model').variants = [
+            RegistrationKey(name='model',
+                            tags={'hf', 'memory'},
+                            namespace='nle/tos')
+        ]
+
+        return config
+
 
 @register
 def register_routines():
     Registry.add_and_bind_variants(config_class=ToSRoutineConfig,
                                    component_class=CVRoutine,
                                    name='routine',
+                                   namespace='nle/tos')
+
+    Registry.add_and_bind_variants(config_class=ToSRoutineConfig,
+                                   config_constructor=ToSRoutineConfig.get_kb_config,
+                                   component_class=CVRoutine,
+                                   name='routine',
+                                   tags={'kb'},
                                    namespace='nle/tos')
