@@ -23,15 +23,29 @@ class ToSRoutineConfig(NLERoutineConfig):
                             namespace='nle/tos')
         ]
 
-        config.pre_processor = RegistrationKey(name='processor',
-                                               namespace='nle/tos')
+        config.get('pre_processor').variants = [
+            RegistrationKey(name='processor',
+                            namespace='nle/tos'),
+            RegistrationKey(name='processor',
+                            tags={'hf'},
+                            namespace='nle/tos')
+        ]
 
-        config.callbacks = RegistrationKey(name='callback',
-                                           namespace='nle/tos')
+        config.get('callbacks').variants = [
+            RegistrationKey(name='callback',
+                            tags={'hf'},
+                            namespace='nle/tos'),
+            RegistrationKey(name='callback',
+                            namespace='nle/tos')
+        ]
 
         config.metrics = RegistrationKey(name='metrics',
                                          tags={'clf_f1'},
                                          namespace='nle')
+
+        config.add_condition(name='pre_pipeline_compatibility',
+                             condition=lambda c: ('hf' in c.pre_processor.tags and 'hf' in c.model.tags and 'hf' in c.callbacks.tags)
+                                                 or ('hf' not in c.pre_processor.tags and 'hf' not in c.model.tags and 'hf' in c.callbacks.tags))
 
         return config
 
@@ -41,19 +55,32 @@ class ToSRoutineConfig(NLERoutineConfig):
     ):
         config = cls.get_default()
 
-        config.pre_processor = RegistrationKey(name='processor',
-                                               tags={'kb'},
-                                               namespace='nle/tos')
+        config.get('pre_processor').variants = [
+            RegistrationKey(name='processor',
+                            tags={'kb'},
+                            namespace='nle/tos'),
+            RegistrationKey(name='processor',
+                            tags={'kb', 'hf'},
+                            namespace='nle/tos')
+        ]
 
         config.get('model').variants = [
             RegistrationKey(name='model',
                             tags={'hf', 'memory'},
+                            namespace='nle/tos'),
+            RegistrationKey(name='model',
+                            tags={'memory'},
                             namespace='nle/tos')
         ]
 
-        config.callbacks = RegistrationKey(name='callback',
-                                           tags={'memory'},
-                                           namespace='nle/tos')
+        config.get('callbacks').variants = [
+            RegistrationKey(name='callback',
+                            tags={'hf', 'memory'},
+                            namespace='nle/tos'),
+            RegistrationKey(name='callback',
+                            tags={'memory'},
+                            namespace='nle/tos')
+        ]
 
         return config
 

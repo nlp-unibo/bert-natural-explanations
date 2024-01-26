@@ -1,9 +1,10 @@
 import math
 import os
 from functools import partial
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Iterable
 
 import numpy as np
+import pandas as pd
 import torch as th
 from sklearn.preprocessing import LabelEncoder
 from torch.nn.utils.rnn import pad_sequence
@@ -15,6 +16,9 @@ from cinnamon_core.core.data import FieldDict
 from cinnamon_core.utility import logging_utility
 from cinnamon_generic.components.processor import Processor
 from sklearn.utils.class_weight import compute_class_weight
+
+from torchtext.vocab import build_vocab_from_iterator
+from torchtext.data import get_tokenizer
 
 
 # Input/Output
@@ -113,6 +117,85 @@ class HFKBTokenizer(HFTokenizer):
         self.kb = FieldDict({
             'input_ids': tok_info['input_ids'],
             'attention_mask': tok_info['attention_mask'],
+            'pad_token_id': data.pad_token_id
+        })
+
+        return data
+
+
+class THTokenizer(Processor):
+
+    def __init__(
+            self,
+            **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.tokenizer = get_tokenizer(**self.tokenization_args)
+        self.pad_token = '<PAD>'
+        self.unk_token = '<UNK>'
+
+    def fit(
+            self,
+            data: FieldDict,
+    ):
+        self.vocabulary = build_vocab_from_iterator(iterator=[self.tokenizer(text) for text in data.text],
+                                                    specials=[self.pad_token, self.unk_token],
+                                                    special_first=True)
+        self.vocab_size = len(self.vocabulary)
+
+    def tokenize(
+            self,
+            text: Iterable[str]
+    ) -> Any:
+        return [[self.vocabulary[token] if token in self.vocabulary else self.vocabulary[self.unk_token]
+                 for token in self.tokenizer(seq)] for seq in text]
+
+    def run(
+            self,
+            data: Optional[FieldDict] = None,
+            is_training_data: bool = False
+    ) -> Optional[FieldDict]:
+        data.add(name='pad_token_id', value=0)
+        data.add(name='input_ids', value=[])
+        data.add(name='attention_mask', value=[])
+        data.add(name='id', value=[])
+
+        if is_training_data:
+            self.fit(data=data)
+
+        text = data.text
+        input_ids = self.tokenize(text=text)
+        attention_mask = [[1] * len(seq) for seq in input_ids]
+
+        data.input_ids.extend(input_ids)
+        data.attention_mask.extend(attention_mask)
+        data.id.extend(np.arange(len(text)).tolist())
+
+        return data
+
+
+class THKBTokenizer(THTokenizer):
+
+    def __init__(
+            self,
+            **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.kb = None
+
+    def run(
+            self,
+            data: Optional[FieldDict] = None,
+            is_training_data: bool = False
+    ) -> Optional[FieldDict]:
+        data = super().run(data=data, is_training_data=is_training_data)
+
+        kb = data['kb']
+        input_ids = self.tokenize(text=kb)
+        attention_mask = [[1] * len(seq) for seq in input_ids]
+        self.kb = FieldDict({
+            'input_ids': input_ids,
+            'attention_mask': attention_mask,
             'pad_token_id': data.pad_token_id
         })
 
@@ -239,6 +322,35 @@ class THClassifierProcessor(Processor):
 
 class ResultsProcessor(Processor):
 
+    def compute_best_per_fold(
+            self,
+            steps
+    ):
+        """
+        Computes metric values (mean and std) only considering the best seed per fold.
+        """
+        metric_dict = {}
+        for step_info in steps:
+            metric_dict.setdefault('seed', []).append(step_info.seed)
+            metric_dict.setdefault('fold', []).append(step_info.fold)
+
+            for metric_name, metric_value in step_info.val_info.metrics.items():
+                metric_dict.setdefault(f'val_{metric_name}', []).append(metric_value)
+
+            for metric_name, metric_value in step_info.test_info.metrics.items():
+                metric_dict.setdefault(f'test_{metric_name}', []).append(metric_value)
+
+        metric_df = pd.DataFrame.from_dict(metric_dict)
+        metric_names = [col for col in metric_df.columns if col.startswith('test')]
+        best_series = []
+        for _, fold_df in metric_df.groupby('fold'):
+            best_idx = fold_df.reset_index().idxmax(axis=0)['val_clf_f1']
+            best_series.append(fold_df.iloc[best_idx][metric_names])
+
+        best_df = pd.DataFrame(best_series, columns=best_series[0].keys().values.tolist())
+        best_dict = {col: f'{np.mean(best_df[col].values)} +/- {np.std(best_df[col].values)}' for col in best_df.columns}
+        return best_dict
+
     def process(
             self,
             data: FieldDict,
@@ -252,5 +364,9 @@ class ResultsProcessor(Processor):
 
         data.add(name='parsed', value=results)
         logging_utility.logger.info(f'Model performance: {os.linesep}{results}')
+
+        best_per_fold = self.compute_best_per_fold(steps=data.steps)
+        data.add(name='best_per_fold', value=best_per_fold)
+        logging_utility.logger.info(f'Best per fold: {os.linesep}{best_per_fold}')
 
         return data

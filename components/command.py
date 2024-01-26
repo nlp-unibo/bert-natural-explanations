@@ -31,7 +31,7 @@ class Command(Component):
         parse_key = RegistrationKey(name=parse_args.name,
                                     tags=parse_args.tags,
                                     namespace=parse_args.namespace)
-        keys = [key for key in Registry.REGISTRY if key.partial_match(parse_key)]
+        keys = [key for key in Registry.REGISTRY if key == parse_key]
         assert len(keys) == 1, f'Expected to find only one key but found {keys}'
 
         found_key = keys[0]

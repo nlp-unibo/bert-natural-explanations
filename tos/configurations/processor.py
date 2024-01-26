@@ -4,7 +4,7 @@ from cinnamon_core.core.configuration import Configuration, C
 from cinnamon_core.core.registry import Registry, RegistrationKey, register
 from cinnamon_generic.components.processor import ProcessorPipeline
 from cinnamon_generic.configurations.pipeline import OrderedPipelineConfig
-from components.processor import HFTokenizer, HFKBTokenizer, ModelProcessor
+from components.processor import HFTokenizer, HFKBTokenizer, ModelProcessor, THTokenizer, THKBTokenizer
 
 
 class HFTokenizerConfig(Configuration):
@@ -25,6 +25,25 @@ class HFTokenizerConfig(Configuration):
                        'truncation': True,
                        'add_special_tokens': True,
                        'max_length': 200
+                   },
+                   type_hint=Dict,
+                   description='Additional tokenization arguments.')
+
+        return config
+
+
+class THTokenizerConfig(Configuration):
+
+    @classmethod
+    def get_default(
+            cls: Type[C]
+    ) -> C:
+        config = super().get_default()
+
+        config.add(name='tokenization_args',
+                   value={
+                       'language': 'en',
+                       'tokenizer': 'basic_english',
                    },
                    type_hint=Dict,
                    description='Additional tokenization arguments.')
@@ -59,11 +78,23 @@ def register_processors():
     Registry.add_and_bind(config_class=HFTokenizerConfig,
                           component_class=HFTokenizer,
                           name='processor',
-                          tags={'tokenizer'},
+                          tags={'tokenizer', 'hf'},
                           namespace='nle/tos')
 
     Registry.add_and_bind(config_class=HFTokenizerConfig,
                           component_class=HFKBTokenizer,
+                          name='processor',
+                          tags={'tokenizer', 'kb', 'hf'},
+                          namespace='nle/tos')
+
+    Registry.add_and_bind(config_class=THTokenizerConfig,
+                          component_class=THTokenizer,
+                          name='processor',
+                          tags={'tokenizer'},
+                          namespace='nle/tos')
+
+    Registry.add_and_bind(config_class=THTokenizerConfig,
+                          component_class=THKBTokenizer,
                           name='processor',
                           tags={'tokenizer', 'kb'},
                           namespace='nle/tos')
@@ -76,6 +107,56 @@ def register_processors():
                                    namespace='nle/tos')
 
     # Pipeline
+    Registry.add_and_bind_variants(config_class=OrderedPipelineConfig,
+                                   component_class=ProcessorPipeline,
+                                   config_constructor=OrderedPipelineConfig.from_keys,
+                                   config_kwargs={
+                                       'keys': [
+                                           RegistrationKey(name='processor',
+                                                           tags={'tokenizer', 'hf'},
+                                                           namespace='nle/tos'),
+                                           RegistrationKey(name='processor',
+                                                           tags={'weights'},
+                                                           namespace='nle'),
+                                           RegistrationKey(name='processor',
+                                                           tags={'model'},
+                                                           namespace='nle/tos')
+                                       ],
+                                       'names': [
+                                           'tokenizer',
+                                           'weights_processor',
+                                           'model_processor'
+                                       ]
+                                   },
+                                   name='processor',
+                                   tags={'hf'},
+                                   namespace='nle/tos')
+
+    Registry.add_and_bind_variants(config_class=OrderedPipelineConfig,
+                                   component_class=ProcessorPipeline,
+                                   config_constructor=OrderedPipelineConfig.from_keys,
+                                   config_kwargs={
+                                       'keys': [
+                                           RegistrationKey(name='processor',
+                                                           tags={'tokenizer', 'kb', 'hf'},
+                                                           namespace='nle/tos'),
+                                           RegistrationKey(name='processor',
+                                                           tags={'weights'},
+                                                           namespace='nle'),
+                                           RegistrationKey(name='processor',
+                                                           tags={'model'},
+                                                           namespace='nle/tos')
+                                       ],
+                                       'names': [
+                                           'kb_tokenizer',
+                                           'weights_processor',
+                                           'model_processor'
+                                       ]
+                                   },
+                                   name='processor',
+                                   tags={'kb', 'hf'},
+                                   namespace='nle/tos')
+
     Registry.add_and_bind_variants(config_class=OrderedPipelineConfig,
                                    component_class=ProcessorPipeline,
                                    config_constructor=OrderedPipelineConfig.from_keys,

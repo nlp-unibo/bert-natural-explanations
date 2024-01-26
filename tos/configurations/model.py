@@ -5,7 +5,7 @@ import torch as th
 from cinnamon_core.core.configuration import C
 from cinnamon_core.core.registry import Registry, register, RegistrationKey
 from cinnamon_generic.configurations.model import NetworkConfig
-from components.model import HFBaseline, HFMem
+from components.model import HFBaseline, HFMANN, MANN
 from configurations.model import MemoryNetworkConfig
 
 
@@ -54,7 +54,7 @@ class HFBaselineConfig(NetworkConfig):
         return config
 
 
-class HFMemConfig(MemoryNetworkConfig):
+class HFMANNConfig(MemoryNetworkConfig):
 
     @classmethod
     def get_default(
@@ -89,6 +89,63 @@ class HFMemConfig(MemoryNetworkConfig):
         return config
 
 
+class MANNConfig(MemoryNetworkConfig):
+
+    @classmethod
+    def get_default(
+            cls: Type[C]
+    ) -> C:
+        config = super().get_default()
+
+        config.epochs = 1
+        config.add(name='embedding_dimension',
+                   value=256,
+                   is_required=True,
+                   description="Embedding dimension")
+        config.add(name='num_classes',
+                   value=1,
+                   type_hint=int,
+                   description='Number of classification classes.',
+                   tags={'model'},
+                   is_required=True)
+        config.add(name='optimizer_class',
+                   value=th.optim.Adam,
+                   is_required=True,
+                   tags={'model'},
+                   description='Optimizer to use for network weights update')
+        config.add(name='optimizer_args',
+                   value={
+                       "lr": 1e-03,
+                       "weight_decay": 1e-05
+                   },
+                   type_hint=Dict,
+                   tags={'model'},
+                   description="Arguments for creating the network optimizer")
+        config.add(name='dropout_rate',
+                   value=0.70,
+                   type_hint=float,
+                   description='Dropout rate for dropout layer')
+        config.lookup_weights = [
+            32
+        ]
+        config.get('kb_sampler').variants = [
+            RegistrationKey(name='sampler',
+                            tags={'full'},
+                            namespace='nle/tos'),
+            RegistrationKey(name='sampler',
+                            tags={'uniform'},
+                            namespace='nle/tos'),
+            RegistrationKey(name='sampler',
+                            tags={'attention'},
+                            namespace='nle/tos'),
+            RegistrationKey(name='sampler',
+                            tags={'gain'},
+                            namespace='nle/tos'),
+        ]
+
+        return config
+
+
 @register
 def register_models():
     Registry.add_and_bind_variants(config_class=HFBaselineConfig,
@@ -97,8 +154,14 @@ def register_models():
                                    tags={'hf', 'baseline'},
                                    namespace='nle/tos')
 
-    Registry.add_and_bind_variants(config_class=HFMemConfig,
-                                   component_class=HFMem,
+    Registry.add_and_bind_variants(config_class=HFMANNConfig,
+                                   component_class=HFMANN,
                                    name='model',
                                    tags={'hf', 'memory'},
+                                   namespace='nle/tos')
+
+    Registry.add_and_bind_variants(config_class=MANNConfig,
+                                   component_class=MANN,
+                                   name='model',
+                                   tags={'memory'},
                                    namespace='nle/tos')

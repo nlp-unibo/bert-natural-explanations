@@ -6,7 +6,7 @@ from cinnamon_generic.components.callback import Callback
 from cinnamon_generic.components.processor import Processor
 from cinnamon_th.components.model import THNetwork
 from modeling.baseline import M_HFBaseline
-from modeling.memory import M_HFMem
+from modeling.memory import M_HFMANN, M_MANN
 
 
 # HF Models
@@ -20,7 +20,8 @@ class HFBaseline(THNetwork):
     ):
         self.model = M_HFBaseline(num_classes=self.num_classes,
                                   hf_model_name=self.hf_model_name,
-                                  freeze_hf=self.freeze_hf).to(self.get_device())
+                                  freeze_hf=self.freeze_hf,
+                                  dropout_rate=self.dropout_rate).to(self.get_device())
 
         self.optimizer = self.optimizer_class(**self.optimizer_args,
                                               params=self.model.parameters())
@@ -56,17 +57,18 @@ class HFBaseline(THNetwork):
         return total_loss, true_loss, loss_info, output, model_additional_info
 
 
-class HFMem(THNetwork):
+class HFMANN(THNetwork):
 
     def build(
             self,
             processor: Processor,
             callbacks: Optional[Callback] = None
     ):
-        self.model = M_HFMem(num_classes=self.num_classes,
-                             hf_model_name=self.hf_model_name,
-                             freeze_hf=self.freeze_hf,
-                             lookup_weights=self.lookup_weights).to(self.get_device())
+        self.model = M_HFMANN(num_classes=self.num_classes,
+                              hf_model_name=self.hf_model_name,
+                              freeze_hf=self.freeze_hf,
+                              lookup_weights=self.lookup_weights,
+                              dropout_rate=self.dropout_rate).to(self.get_device())
 
         self.optimizer = self.optimizer_class(**self.optimizer_args,
                                               params=self.model.parameters())
@@ -128,3 +130,26 @@ class HFMem(THNetwork):
                                memory_indices=input_additional_info['memory_indices'])
 
         return total_loss, true_loss, loss_info, output, model_additional_info
+
+
+class MANN(HFMANN):
+
+    def build(
+            self,
+            processor: Processor,
+            callbacks: Optional[Callback] = None
+    ):
+        self.model = M_MANN(num_classes=self.num_classes,
+                            embedding_dimension=self.embedding_dimension,
+                            embedding_matrix=processor.find('embedding_matrix'),
+                            vocab_size=processor.find('vocab_size'),
+                            lookup_weights=self.lookup_weights,
+                            dropout_rate=self.dropout_rate).to(self.get_device())
+
+        self.optimizer = self.optimizer_class(**self.optimizer_args,
+                                              params=self.model.parameters())
+        self.bce = th.nn.BCELoss(reduction='none').to(self.get_device())
+
+        self.pos_weight = processor.find('pos_weight')
+
+        self.kb = processor.find('kb')

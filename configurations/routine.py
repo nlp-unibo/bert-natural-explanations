@@ -25,15 +25,15 @@ class NLERoutineConfig(CVRoutineConfig):
 
         config.seeds = [
             2023,
-            15451,
-            1337,
-            2001,
-            2080,
-            666,
-            1993,
-            2048,
-            42,
-            69
+            # 15451,
+            # 1337,
+            # 2001,
+            # 2080,
+            # 666,
+            # 1993,
+            # 2048,
+            # 42,
+            # 69
         ]
 
         return config

@@ -18,9 +18,18 @@ class ToSEarlyStoppingConfig(THEarlyStoppingConfig):
     ) -> C:
         config = super().get_default()
 
-        config.patience = 5
+        config.patience = 10
         config.monitor = 'val_clf_f1'
+        config.mode = 'max'
 
+        return config
+
+    @classmethod
+    def get_baseline_config(
+            cls
+    ):
+        config = cls.get_default()
+        config.patience = 50
         return config
 
 
@@ -43,6 +52,13 @@ def register_callback_configurations():
     Registry.add_and_bind(config_class=ToSEarlyStoppingConfig,
                           component_class=THEarlyStopping,
                           name='callback',
+                          tags={'early_stopping', 'th', 'hf'},
+                          namespace='nle/tos')
+
+    Registry.add_and_bind(config_class=ToSEarlyStoppingConfig,
+                          config_constructor=ToSEarlyStoppingConfig.get_baseline_config,
+                          component_class=THEarlyStopping,
+                          name='callback',
                           tags={'early_stopping', 'th'},
                           namespace='nle/tos')
 
@@ -50,6 +66,54 @@ def register_callback_configurations():
                           component_class=WandDB,
                           name='callback',
                           tags={'wandb'},
+                          namespace='nle/tos')
+
+    Registry.add_and_bind(config_class=PipelineConfig,
+                          component_class=CallbackPipeline,
+                          config_constructor=PipelineConfig.from_keys,
+                          config_kwargs={
+                              'keys': [
+                                  RegistrationKey(name='callback',
+                                                  tags={'early_stopping', 'th', 'hf'},
+                                                  namespace='nle/tos'),
+                                  RegistrationKey(name='callback',
+                                                  tags={'wandb'},
+                                                  namespace='nle/tos')
+
+                              ],
+                              'names': [
+                                  'early_stopping',
+                                  'wandb_logger'
+                              ]
+                          },
+                          name='callback',
+                          tags={'hf'},
+                          namespace='nle/tos')
+
+    Registry.add_and_bind(config_class=PipelineConfig,
+                          component_class=CallbackPipeline,
+                          config_constructor=PipelineConfig.from_keys,
+                          config_kwargs={
+                              'keys': [
+                                  RegistrationKey(name='callback',
+                                                  tags={'early_stopping', 'th', 'hf'},
+                                                  namespace='nle/tos'),
+                                  RegistrationKey(name='callback',
+                                                  tags={'sampler', 'updater'},
+                                                  namespace='nle'),
+                                  RegistrationKey(name='callback',
+                                                  tags={'wandb'},
+                                                  namespace='nle/tos')
+
+                              ],
+                              'names': [
+                                  'early_stopping',
+                                  'sampler_updater',
+                                  'wandb_logger'
+                              ]
+                          },
+                          name='callback',
+                          tags={'memory', 'hf'},
                           namespace='nle/tos')
 
     Registry.add_and_bind(config_class=PipelineConfig,

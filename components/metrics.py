@@ -19,3 +19,5 @@ class ClassificationMetric(LambdaMetric):
         method_args = self.method_args if self.method_args is not None else {}
         metric_value = self.method(y_pred=y_pred, y_true=y_true, **method_args)
         return metric_value if not as_dict else {self.name: metric_value}
+
+
