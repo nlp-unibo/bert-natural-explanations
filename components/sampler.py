@@ -36,7 +36,8 @@ class KBSampler(Component):
         sampling_size = np.minimum(sampling_size, memory_size)
         return self.rng.choice(memory_size,
                                size=sampling_size,
-                               p=self.sampling_priority)
+                               p=self.sampling_priority,
+                               replace=False)
 
     # Note: this is invoked by an external callback to control update rate
     def update_priority(
@@ -103,14 +104,16 @@ class AttentionKBSampler(KBSampler):
 
         # [bs,]
         positive_mask = model_info['positive_mask'].detach().cpu().numpy()
-        positive_indexes = np.where(positive_mask)[0]
 
         # [M]
         memory_scores *= positive_mask[:, np.newaxis]
         memory_scores = np.sum(memory_scores, axis=0)
 
-        self.accumulated_scores[positive_indexes] += memory_scores
-        self.accumulated_counts[positive_indexes] += 1
+        memory_indices = memory_indices.detach().cpu().numpy()
+        update_mask = np.minimum(np.sum(positive_mask), 1.0)
+
+        self.accumulated_scores[memory_indices] += memory_scores * update_mask
+        self.accumulated_counts[memory_indices] += 1 * update_mask
 
 
 class LossGainKBSampler(KBSampler):
@@ -121,8 +124,8 @@ class LossGainKBSampler(KBSampler):
             memory_indices
     ):
         # [bs,]
-        input_only_bce = model_info['input_only_bce'].detach().cpu()
-        mem_bce = model_info['mem_bce'].detach().cpu()
+        input_only_bce = model_info['input_only_bce'].detach().cpu().numpy()
+        mem_bce = model_info['mem_bce'].detach().cpu().numpy()
 
         # [bs,]
         gain = np.exp(input_only_bce - mem_bce)
@@ -132,11 +135,13 @@ class LossGainKBSampler(KBSampler):
 
         # [bs,]
         positive_mask = model_info['positive_mask'].detach().cpu().numpy()
-        positive_indexes = np.where(positive_mask)[0]
 
         # [M]
         gain = memory_scores * positive_mask[:, np.newaxis] * gain[:, np.newaxis]
         gain = np.sum(gain, axis=0)
 
-        self.accumulated_scores[positive_indexes] += gain
-        self.accumulated_counts[positive_indexes] += 1
+        memory_indices = memory_indices.detach().cpu().numpy()
+        update_mask = np.minimum(np.sum(positive_mask), 1.0)
+
+        self.accumulated_scores[memory_indices] += gain * update_mask
+        self.accumulated_counts[memory_indices] += 1 * update_mask

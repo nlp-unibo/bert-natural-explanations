@@ -72,3 +72,29 @@ def register_callback_configurations():
                           },
                           name='callback',
                           namespace='nle/tos')
+
+    Registry.add_and_bind(config_class=PipelineConfig,
+                          component_class=CallbackPipeline,
+                          config_constructor=PipelineConfig.from_keys,
+                          config_kwargs={
+                              'keys': [
+                                  RegistrationKey(name='callback',
+                                                  tags={'early_stopping', 'th'},
+                                                  namespace='nle/tos'),
+                                  RegistrationKey(name='callback',
+                                                  tags={'sampler', 'updater'},
+                                                  namespace='nle'),
+                                  RegistrationKey(name='callback',
+                                                  tags={'wandb'},
+                                                  namespace='nle/tos')
+
+                              ],
+                              'names': [
+                                  'early_stopping',
+                                  'sampler_updater',
+                                  'wandb_logger'
+                              ]
+                          },
+                          name='callback',
+                          tags={'memory'},
+                          namespace='nle/tos')

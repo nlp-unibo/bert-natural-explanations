@@ -62,7 +62,10 @@ class HFMemConfig(MemoryNetworkConfig):
     ) -> C:
         config = super().get_default()
 
+        # Note: we have to define an API for merging configurations
         for key, value in HFBaselineConfig.get_default().items():
+            if key == 'conditions':
+                value.value.update(config[key])
             config[key] = value
 
         config.lookup_weights = [

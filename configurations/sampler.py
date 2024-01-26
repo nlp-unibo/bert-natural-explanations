@@ -22,6 +22,3 @@ class KBSamplerConfig(Configuration):
                    description='Alpha hyper-parameter of PER.')
 
         return config
-
-
-

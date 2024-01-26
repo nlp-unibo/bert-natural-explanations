@@ -1,6 +1,8 @@
 from typing import Type
 
+from cinnamon_core.core.registry import Registry, register
 from cinnamon_core.core.configuration import Configuration, C
+from components.callback import SamplerPriorityUpdater
 
 
 class WandDBConfig(Configuration):
@@ -44,3 +46,12 @@ class SamplerPriorityUpdaterConfig(Configuration):
                    description='Period (in number of epochs) to update kb sampler priority weights.')
 
         return config
+
+
+@register
+def register_callbacks():
+    Registry.add_and_bind(config_class=SamplerPriorityUpdaterConfig,
+                          component_class=SamplerPriorityUpdater,
+                          name='callback',
+                          tags={'sampler', 'updater'},
+                          namespace='nle')

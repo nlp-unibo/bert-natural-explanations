@@ -51,6 +51,10 @@ class ToSRoutineConfig(NLERoutineConfig):
                             namespace='nle/tos')
         ]
 
+        config.callbacks = RegistrationKey(name='callback',
+                                           tags={'memory'},
+                                           namespace='nle/tos')
+
         return config
 
 

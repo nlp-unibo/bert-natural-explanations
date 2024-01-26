@@ -41,12 +41,11 @@ class HFBaseline(THNetwork):
         true_loss = 0
 
         # Downstream task loss
-        # [bs, N]
+        # [bs]
         pos_weights = th.where(batch_y['label'] == 1, self.pos_weight, 1.0)
         ce_loss = self.bce(th.sigmoid(output['logits']), batch_y['label'].unsqueeze(-1)).squeeze(-1)
         ce_loss *= pos_weights
         ce_loss = ce_loss.sum(dim=-1) / pos_weights.sum(dim=-1)
-        ce_loss = th.mean(ce_loss)
 
         total_loss += ce_loss
         true_loss += ce_loss
@@ -96,16 +95,13 @@ class HFMem(THNetwork):
         true_loss = 0
 
         # Downstream task loss
-        # [bs, N]
+        # [bs]
         pos_weights = th.where(batch_y['label'] == 1, self.pos_weight, 1.0)
-        mem_ce_loss = self.bce(th.sigmoid(output['mem_logits']), batch_y['label'].unsqueeze(-1)).squeeze(-1)
+        mem_ce_loss = self.bce(th.sigmoid(output['logits']), batch_y['label'].unsqueeze(-1)).squeeze(-1)
         mem_ce_loss *= pos_weights
 
-        # [bs]
-        mem_ce_loss = mem_ce_loss.sum(dim=-1) / pos_weights.sum(dim=-1)
-
         # []
-        ce_loss = th.mean(mem_ce_loss)
+        ce_loss = mem_ce_loss.sum(dim=-1) / pos_weights.sum(dim=-1)
 
         total_loss += ce_loss
         true_loss += ce_loss
@@ -116,10 +112,10 @@ class HFMem(THNetwork):
         # TODO: add SS
 
         # Input only downstream task loss
-        # [bs, N]
-        input_ce_loss = self.bce(th.sigmoid(output['input_only_logits']), batch_y['label'].unsqueeze(-1)).squeeze(-1)
+        # [bs]
+        input_ce_loss = self.bce(th.sigmoid(model_additional_info['input_only_logits']),
+                                 batch_y['label'].unsqueeze(-1)).squeeze(-1)
         input_ce_loss *= pos_weights
-        input_ce_loss = input_ce_loss.sum(dim=-1) / pos_weights.sum(dim=-1)
 
         # Update sampler
         model_info = {
@@ -128,7 +124,7 @@ class HFMem(THNetwork):
             'input_only_bce': input_ce_loss,
             'mem_bce': mem_ce_loss
         }
-        self.sampler.update(model_info=model_info,
-                            memory_indices=input_additional_info['memory_indices'])
+        self.kb_sampler.update(model_info=model_info,
+                               memory_indices=input_additional_info['memory_indices'])
 
         return total_loss, true_loss, loss_info, output, model_additional_info

@@ -101,6 +101,8 @@ class M_HFMem(th.nn.Module):
         input_only_logits = self.compute_logits(classification_emb=input_classification_emb.detach())
 
         return {
-            'mem_logits': mem_logits,
+            'logits': mem_logits,
+        }, {
+            'memory_scores': memory_scores,
             'input_only_logits': input_only_logits
-        }, None
+        }
