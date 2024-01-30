@@ -43,9 +43,9 @@ class KBSampler(Component):
         sampling_size = self.sampling_size if self.sampling_size > 0 else memory_size
         sampling_size = np.minimum(sampling_size, memory_size)
         return np.stack([self.rng.choice(memory_size,
-                               size=sampling_size,
-                               p=self.sampling_priority,
-                               replace=False) for _ in range(batch_size)], axis=0)
+                                         size=sampling_size,
+                                         p=self.sampling_priority,
+                                         replace=False) for _ in range(batch_size)], axis=0)
 
     # Note: this is invoked by an external callback to control update rate
     def update_priority(
@@ -93,8 +93,12 @@ class KBSampler(Component):
                 input_ids.append(th.tensor(kb.input_ids[idx], dtype=th.int32))
                 attention_mask.append(th.tensor(kb.attention_mask[idx], dtype=th.float32))
 
-        input_ids = pad_sequence(input_ids, batch_first=True, padding_value=kb.pad_token_id).view(batch_size, sampled_indices.shape[1], -1)
-        attention_mask = pad_sequence(attention_mask, batch_first=True, padding_value=0).view(batch_size, sampled_indices.shape[1], -1)
+        input_ids = pad_sequence(input_ids, batch_first=True, padding_value=kb.pad_token_id).view(batch_size,
+                                                                                                  sampled_indices.shape[
+                                                                                                      1], -1)
+        attention_mask = pad_sequence(attention_mask, batch_first=True, padding_value=0).view(batch_size,
+                                                                                              sampled_indices.shape[1],
+                                                                                              -1)
         sampled_indices = th.tensor(sampled_indices, dtype=th.int32)
 
         return {
