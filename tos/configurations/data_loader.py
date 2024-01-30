@@ -37,7 +37,13 @@ class ToSLoaderConfig(DataLoaderConfig):
                    type_hint=int,
                    description='Number of samples to take for each data split')
         config.add(name='category',
-                   variants=['A', 'CH', 'CR', 'LTD', 'TER'],
+                   variants=[
+                       'A',
+                       # 'CH',
+                       # 'CR',
+                       # 'LTD',
+                       # 'TER'
+                   ],
                    is_required=True)
 
         return config

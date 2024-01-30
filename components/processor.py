@@ -190,13 +190,12 @@ class THKBTokenizer(THTokenizer):
     ) -> Optional[FieldDict]:
         data = super().run(data=data, is_training_data=is_training_data)
 
-        kb = data['kb']
-        input_ids = self.tokenize(text=kb)
+        input_ids = self.tokenize(text=data.kb)
         attention_mask = [[1] * len(seq) for seq in input_ids]
         self.kb = FieldDict({
             'input_ids': input_ids,
             'attention_mask': attention_mask,
-            'pad_token_id': data.pad_token_id
+            'pad_token_id': data.pad_token_id,
         })
 
         return data
@@ -307,6 +306,89 @@ class ModelProcessor(Processor):
                           'steps': steps})
 
 
+class ModelMemoryProcessor(Processor):
+
+    def batch_data(
+            self,
+            input_batch,
+            device,
+            pad_token_id
+    ):
+        input_ids, attention_mask, sample_id = [], [], []
+        label, memory_targets = [], []
+
+        # input_x is:
+        # 0 -> input_ids
+        # 1 -> attention_mask
+        # 2 -> sample_id
+        for input_x, input_y in input_batch:
+            input_ids.append(th.tensor(input_x[0], dtype=th.int32))
+            attention_mask.append(th.tensor(input_x[1], dtype=th.int32))
+            sample_id.append(input_x[2])
+
+            label.append(input_y[0])
+            memory_targets.append(input_y[1])
+
+        # input
+        input_ids = pad_sequence(input_ids, batch_first=True, padding_value=pad_token_id)
+        attention_mask = pad_sequence(attention_mask, batch_first=True, padding_value=0)
+        sample_id = th.tensor(sample_id, dtype=th.int32)
+
+        # input
+        x = {
+            'input_ids': input_ids.to(device),
+            'attention_mask': attention_mask.to(device),
+            'sample_id': sample_id.to(device)
+        }
+
+        label = th.tensor(np.array(label), dtype=th.float32)
+        memory_targets = th.tensor(np.array(memory_targets), dtype=th.float32)
+
+        # output
+        y = {
+            'label': label.to(device),
+            'memory_targets': memory_targets.to(device)
+        }
+
+        return x, y
+
+    def process(
+            self,
+            data: FieldDict,
+            is_training_data: bool = False
+    ) -> FieldDict:
+        x_input_ids = SequenceWrapper(data.input_ids)
+        x_attention_mask = SequenceWrapper(data.attention_mask)
+        x_id = SequenceWrapper(data.id)
+
+        x_data = x_input_ids.zip(x_attention_mask, x_id)
+
+        y_label = SequenceWrapper(data.label)
+        y_memory_targets = SequenceWrapper(data.memory_targets)
+        y_data = y_label.zip(y_memory_targets)
+
+        th_data = x_data.zip(y_data)
+
+        if is_training_data:
+            th_data = th_data.shuffle()
+
+        device = th.device('cuda' if th.cuda.is_available() else 'cpu')
+        th_data = DataLoader(th_data,
+                             shuffle=is_training_data,
+                             batch_size=self.batch_size,
+                             num_workers=self.num_workers,
+                             collate_fn=partial(self.batch_data,
+                                                device=device,
+                                                pad_token_id=data.pad_token_id))
+
+        steps = math.ceil(len(data.input_ids) / self.batch_size)
+
+        return FieldDict({'iterator': lambda: iter(th_data),
+                          'input_iterator': lambda: iter(th_data.map(lambda x, y: x)),
+                          'output_iterator': lambda: iter(th_data.map(lambda x, y: y.detach().cpu().numpy())),
+                          'steps': steps})
+
+
 class THClassifierProcessor(Processor):
 
     def process(
@@ -348,7 +430,8 @@ class ResultsProcessor(Processor):
             best_series.append(fold_df.iloc[best_idx][metric_names])
 
         best_df = pd.DataFrame(best_series, columns=best_series[0].keys().values.tolist())
-        best_dict = {col: f'{np.mean(best_df[col].values)} +/- {np.std(best_df[col].values)}' for col in best_df.columns}
+        best_dict = {col: f'{np.mean(best_df[col].values)} +/- {np.std(best_df[col].values)}' for col in
+                     best_df.columns}
         return best_dict
 
     def process(

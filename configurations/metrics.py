@@ -1,7 +1,9 @@
+from typing import List
+
 from sklearn.metrics import f1_score
 
 from cinnamon_core.core.registry import Registry, register
-from cinnamon_generic.configurations.metrics import LambdaMetricConfig
+from cinnamon_generic.configurations.metrics import LambdaMetricConfig, MetricConfig
 from components.metrics import ClassificationMetric
 
 
@@ -15,6 +17,22 @@ class ClassificatioMetricConfig(LambdaMetricConfig):
         config.name = 'clf_f1'
         config.method = f1_score
         config.method_args = {'average': 'binary'}
+        return config
+
+
+class MemoryMetricConfig(MetricConfig):
+
+    @classmethod
+    def get_default(
+            cls
+    ):
+        config = super().get_default()
+
+        config.add(name='threshold',
+                   type_hint=float,
+                   is_required=True,
+                   description='Rounding threshold for raw memory scores.')
+
         return config
 
 

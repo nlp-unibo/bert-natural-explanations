@@ -85,6 +85,8 @@ class HFMANNConfig(MemoryNetworkConfig):
                             tags={'gain'},
                             namespace='nle/tos'),
         ]
+        config.ss_margin = 0.5
+        config.get('ss_coefficient').variants = [0.0, 1.0]
 
         return config
 
@@ -97,7 +99,7 @@ class MANNConfig(MemoryNetworkConfig):
     ) -> C:
         config = super().get_default()
 
-        config.epochs = 1
+        config.epochs = 300
         config.add(name='embedding_dimension',
                    value=256,
                    is_required=True,
@@ -125,6 +127,10 @@ class MANNConfig(MemoryNetworkConfig):
                    value=0.70,
                    type_hint=float,
                    description='Dropout rate for dropout layer')
+        config.add(name='pre_classifier_weight',
+                   value=64,
+                   type_hint=int,
+                   description='Number of units for pre-classifier layer.')
         config.lookup_weights = [
             32
         ]
@@ -142,6 +148,9 @@ class MANNConfig(MemoryNetworkConfig):
                             tags={'gain'},
                             namespace='nle/tos'),
         ]
+
+        config.ss_margin = 0.5
+        config.get('ss_coefficient').variants = [0.0, 1.0]
 
         return config
 

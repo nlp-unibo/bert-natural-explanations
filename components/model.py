@@ -7,6 +7,7 @@ from cinnamon_generic.components.processor import Processor
 from cinnamon_th.components.model import THNetwork
 from modeling.baseline import M_HFBaseline
 from modeling.memory import M_HFMANN, M_MANN
+from modeling.losses import strong_supervision
 
 
 # HF Models
@@ -44,8 +45,8 @@ class HFBaseline(THNetwork):
         # Downstream task loss
         # [bs]
         pos_weights = th.where(batch_y['label'] == 1, self.pos_weight, 1.0)
-        ce_loss = self.bce(th.sigmoid(output['logits']), batch_y['label'].unsqueeze(-1)).squeeze(-1)
-        ce_loss *= pos_weights
+        self.bce.weight = pos_weights
+        ce_loss = self.bce(th.sigmoid(output['logits']), batch_y['label'])
         ce_loss = ce_loss.sum(dim=-1) / pos_weights.sum(dim=-1)
 
         total_loss += ce_loss
@@ -99,8 +100,8 @@ class HFMANN(THNetwork):
         # Downstream task loss
         # [bs]
         pos_weights = th.where(batch_y['label'] == 1, self.pos_weight, 1.0)
-        mem_ce_loss = self.bce(th.sigmoid(output['logits']), batch_y['label'].unsqueeze(-1)).squeeze(-1)
-        mem_ce_loss *= pos_weights
+        self.bce.weight = pos_weights
+        mem_ce_loss = self.bce(th.sigmoid(output['logits']), batch_y['label'])
 
         # []
         ce_loss = mem_ce_loss.sum(dim=-1) / pos_weights.sum(dim=-1)
@@ -111,23 +112,35 @@ class HFMANN(THNetwork):
             'CE': ce_loss
         }
 
-        # TODO: add SS
+        # Strong supervision (SS)
+
+        # [M]
+        memory_indices = input_additional_info['memory_indices'].to(th.long)
+
+        # [bs, M]
+        memory_targets = batch_y['memory_targets'][:, memory_indices]
+
+        ss_loss = strong_supervision(memory_scores=output['memory_scores'],
+                                     memory_targets=memory_targets,
+                                     margin=self.ss_margin)
+        total_loss += ss_loss * self.ss_coefficient
+        true_loss += ss_loss
+        loss_info['SS'] = ss_loss
 
         # Input only downstream task loss
         # [bs]
-        input_ce_loss = self.bce(th.sigmoid(model_additional_info['input_only_logits']),
-                                 batch_y['label'].unsqueeze(-1)).squeeze(-1)
+        input_ce_loss = self.bce(th.sigmoid(model_additional_info['input_only_logits']), batch_y['label'])
         input_ce_loss *= pos_weights
 
         # Update sampler
         model_info = {
-            'memory_scores': model_additional_info['memory_scores'],
+            'memory_scores': output['memory_scores'],
             'positive_mask': batch_y['label'],
             'input_only_bce': input_ce_loss,
             'mem_bce': mem_ce_loss
         }
         self.kb_sampler.update(model_info=model_info,
-                               memory_indices=input_additional_info['memory_indices'])
+                               memory_indices=memory_indices)
 
         return total_loss, true_loss, loss_info, output, model_additional_info
 
@@ -144,7 +157,8 @@ class MANN(HFMANN):
                             embedding_matrix=processor.find('embedding_matrix'),
                             vocab_size=processor.find('vocab_size'),
                             lookup_weights=self.lookup_weights,
-                            dropout_rate=self.dropout_rate).to(self.get_device())
+                            dropout_rate=self.dropout_rate,
+                            pre_classifier_weight=self.pre_classifier_weight).to(self.get_device())
 
         self.optimizer = self.optimizer_class(**self.optimizer_args,
                                               params=self.model.parameters())

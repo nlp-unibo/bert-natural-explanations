@@ -82,6 +82,10 @@ class ToSRoutineConfig(NLERoutineConfig):
                             namespace='nle/tos')
         ]
 
+        config.metrics = RegistrationKey(name='metrics',
+                                         tags={'memory'},
+                                         namespace='nle/tos')
+
         return config
 
 

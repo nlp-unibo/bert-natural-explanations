@@ -94,16 +94,20 @@ class M_HFMANN(th.nn.Module):
         # [bs, 2*d]
         mem_classification_emb = self.memory_reasoning(memory_extraction=memory_extraction,
                                                        input_embedding=input_embedding)
-        mem_logits = self.compute_logits(classification_emb=mem_classification_emb)
+
+        # [bs,]
+        mem_logits = self.compute_logits(classification_emb=mem_classification_emb).squeeze(-1)
 
         # [bs, 2*d]
         input_classification_emb = th.concat((input_embedding, th.zeros_like(input_embedding)), dim=-1)
-        input_only_logits = self.compute_logits(classification_emb=input_classification_emb.detach())
+
+        # [bs,]
+        input_only_logits = self.compute_logits(classification_emb=input_classification_emb.detach()).squeeze(-1)
 
         return {
             'logits': mem_logits,
+            'memory_scores': memory_scores
         }, {
-            'memory_scores': memory_scores,
             'input_only_logits': input_only_logits
         }
 
@@ -113,6 +117,7 @@ class M_MANN(th.nn.Module):
     def __init__(
             self,
             embedding_dimension,
+            pre_classifier_weight,
             vocab_size,
             num_classes,
             lookup_weights,
@@ -136,10 +141,10 @@ class M_MANN(th.nn.Module):
 
         self.dropout = th.nn.Dropout(p=dropout_rate)
         self.pre_classifier = th.nn.Linear(in_features=embedding_dimension * 2,
-                                           out_features=embedding_dimension)
+                                           out_features=pre_classifier_weight)
         self.pre_activation = th.nn.ReLU()
         self.classifier = th.nn.Linear(out_features=num_classes,
-                                       in_features=embedding_dimension)
+                                       in_features=pre_classifier_weight)
 
     def compute_logits(
             self,
@@ -196,15 +201,18 @@ class M_MANN(th.nn.Module):
         # [bs, 2*d]
         mem_classification_emb = self.memory_reasoning(memory_extraction=memory_extraction,
                                                        input_embedding=input_embedding)
-        mem_logits = self.compute_logits(classification_emb=mem_classification_emb)
+        # [bs,]
+        mem_logits = self.compute_logits(classification_emb=mem_classification_emb).squeeze(-1)
 
         # [bs, 2*d]
         input_classification_emb = th.concat((input_embedding, th.zeros_like(input_embedding)), dim=-1)
-        input_only_logits = self.compute_logits(classification_emb=input_classification_emb.detach())
+
+        # [bs,]
+        input_only_logits = self.compute_logits(classification_emb=input_classification_emb.detach()).squeeze(-1)
 
         return {
             'logits': mem_logits,
+            'memory_scores': memory_scores
         }, {
-            'memory_scores': memory_scores,
-            'input_only_logits': input_only_logits
+            'input_only_logits': input_only_logits,
         }

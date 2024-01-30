@@ -18,5 +18,13 @@ class MemoryNetworkConfig(NetworkConfig):
         config.add(name='lookup_weights',
                    is_required=True,
                    description='MLP weights for memory lookup module')
+        config.add(name='ss_margin',
+                   value=0.5,
+                   type_hint=float,
+                   description='Margin for strong supervision loss.')
+        config.add(name='ss_coefficient',
+                   is_required=True,
+                   type_hint=float,
+                   description='Strong supervision loss coefficient.')
 
         return config

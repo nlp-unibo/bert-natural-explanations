@@ -4,7 +4,7 @@ from cinnamon_core.core.configuration import Configuration, C
 from cinnamon_core.core.registry import Registry, RegistrationKey, register
 from cinnamon_generic.components.processor import ProcessorPipeline
 from cinnamon_generic.configurations.pipeline import OrderedPipelineConfig
-from components.processor import HFTokenizer, HFKBTokenizer, ModelProcessor, THTokenizer, THKBTokenizer
+from components.processor import HFTokenizer, HFKBTokenizer, ModelProcessor, THTokenizer, THKBTokenizer, ModelMemoryProcessor
 
 
 class HFTokenizerConfig(Configuration):
@@ -106,6 +106,12 @@ def register_processors():
                                    tags={'model'},
                                    namespace='nle/tos')
 
+    Registry.add_and_bind_variants(config_class=ModelProcessorConfig,
+                                   component_class=ModelMemoryProcessor,
+                                   name='processor',
+                                   tags={'model', 'memory'},
+                                   namespace='nle/tos')
+
     # Pipeline
     Registry.add_and_bind_variants(config_class=OrderedPipelineConfig,
                                    component_class=ProcessorPipeline,
@@ -144,7 +150,7 @@ def register_processors():
                                                            tags={'weights'},
                                                            namespace='nle'),
                                            RegistrationKey(name='processor',
-                                                           tags={'model'},
+                                                           tags={'model', 'memory'},
                                                            namespace='nle/tos')
                                        ],
                                        'names': [
@@ -193,7 +199,7 @@ def register_processors():
                                                            tags={'weights'},
                                                            namespace='nle'),
                                            RegistrationKey(name='processor',
-                                                           tags={'model'},
+                                                           tags={'model', 'memory'},
                                                            namespace='nle/tos')
                                        ],
                                        'names': [

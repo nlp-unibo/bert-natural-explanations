@@ -52,7 +52,7 @@ class M_HFBaseline(th.nn.Module):
         pre_logits = self.pre_activation(pre_logits)
         if self.training:
             pre_logits = self.dropout(pre_logits)
-        logits = self.classifier(pre_logits)
+        logits = self.classifier(pre_logits).squeeze(-1)
 
         return {
             'logits': logits

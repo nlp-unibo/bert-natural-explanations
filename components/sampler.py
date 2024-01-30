@@ -88,7 +88,7 @@ class KBSampler(Component):
         return {
             'kb_input_ids': input_ids,
             'kb_attention_mask': attention_mask,
-            'memory_indices': sampled_indices
+            'memory_indices': sampled_indices,
         }
 
 

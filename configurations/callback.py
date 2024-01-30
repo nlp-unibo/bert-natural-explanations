@@ -48,6 +48,22 @@ class SamplerPriorityUpdaterConfig(Configuration):
         return config
 
 
+class MemoryInfoRetrieverConfig(Configuration):
+
+    @classmethod
+    def get_default(
+            cls: Type[C]
+    ) -> C:
+        config = super().get_default()
+
+        config.add(name='memory_metrics',
+                   is_child=True,
+                   is_required=True,
+                   description='Memory metrics to compute.')
+
+        return config
+
+
 @register
 def register_callbacks():
     Registry.add_and_bind(config_class=SamplerPriorityUpdaterConfig,

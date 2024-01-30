@@ -87,11 +87,16 @@ class ToSLoader(DataLoader):
         targets = data[f'{self.category}_targets'].values
         targets = [[int(item) for item in t.replace('[', '').replace(']', '').split(',')] if t is not np.nan else [] for
                    t in targets]
-        return_field.add(name='targets',
-                         value=targets,
-                         type_hint=Iterable[List[int]],
+        memory_targets = []
+        for target_set in targets:
+            target_mask = np.zeros((len(self.kb)))
+            target_mask[target_set] = 1
+            memory_targets.append(target_mask.tolist())
+        memory_targets = np.array(memory_targets)
+        return_field.add(name='memory_targets',
+                         value=memory_targets,
                          tags={'metadata'},
-                         description='Ground-truth explanation indexes associated to sample.'
+                         description='Ground-truth memory target mask associated to sample.'
                                      'The targets are used by strong supervision to guide a model to'
                                      'correctly select explanations.')
         return return_field
