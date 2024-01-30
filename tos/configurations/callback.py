@@ -6,8 +6,8 @@ from cinnamon_generic.components.callback import CallbackPipeline
 from cinnamon_generic.configurations.pipeline import PipelineConfig
 from cinnamon_th.components.callback import THEarlyStopping
 from cinnamon_th.configurations.callback import THEarlyStoppingConfig
-from components.callback import WandDB, MemoryInfoRetriever
-from configurations.callback import WandDBConfig, MemoryInfoRetrieverConfig
+from components.callback import WandDB
+from configurations.callback import WandDBConfig
 
 
 class ToSEarlyStoppingConfig(THEarlyStoppingConfig):
@@ -43,21 +43,6 @@ class ToSWandDBConfig(WandDBConfig):
 
         config.project = 'nle-tos'
         config.disabled = False
-
-        return config
-
-
-class ToSMemoryInfoRetrieverConfig(MemoryInfoRetrieverConfig):
-
-    @classmethod
-    def get_default(
-            cls: Type[C]
-    ) -> C:
-        config = super().get_default()
-
-        config.memory_metrics = RegistrationKey(name='metrics',
-                                                tags={'memory'},
-                                                namespace='nle/tos')
 
         return config
 

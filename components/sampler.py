@@ -21,6 +21,13 @@ class KBSampler(Component):
         self.accumulated_counts = None
         self.sampling_priority = None
 
+    def prepare_save_data(
+            self
+    ) -> Dict:
+        save_data = super().prepare_save_data()
+        save_data['sampling_priority'] = self.sampling_priority
+        return save_data
+
     def clear(
             self
     ):

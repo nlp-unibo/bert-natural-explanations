@@ -16,10 +16,14 @@ class ToSResultsPipelineConfig(ResultsPipelineConfig):
 
         config.get('routine').variants = [
             RegistrationKey(name='routine',
+                            tags={'hf', 'baseline'},
                             namespace='nle/tos'),
             RegistrationKey(name='routine',
-                            tags={'kb'},
+                            tags={'kb', 'hf'},
                             namespace='nle/tos'),
+            RegistrationKey(name='routine',
+                            tags={'kb', 'baseline'},
+                            namespace='nle/tos')
         ]
 
         return config

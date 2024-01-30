@@ -17,70 +17,73 @@ class ToSRoutineConfig(NLERoutineConfig):
         config.data_splitter = RegistrationKey(name='data_splitter',
                                                namespace='nle/tos')
 
-        config.get('model').variants = [
-            RegistrationKey(name='model',
-                            tags={'hf', 'baseline'},
-                            namespace='nle/tos')
-        ]
-
-        config.get('pre_processor').variants = [
-            RegistrationKey(name='processor',
-                            namespace='nle/tos'),
-            RegistrationKey(name='processor',
-                            tags={'hf'},
-                            namespace='nle/tos')
-        ]
-
-        config.get('callbacks').variants = [
-            RegistrationKey(name='callback',
-                            tags={'hf'},
-                            namespace='nle/tos'),
-            RegistrationKey(name='callback',
-                            namespace='nle/tos')
-        ]
-
         config.metrics = RegistrationKey(name='metrics',
                                          tags={'clf_f1'},
                                          namespace='nle')
 
-        config.add_condition(name='pre_pipeline_compatibility',
-                             condition=lambda c: ('hf' in c.pre_processor.tags and 'hf' in c.model.tags and 'hf' in c.callbacks.tags)
-                                                 or ('hf' not in c.pre_processor.tags and 'hf' not in c.model.tags and 'hf' in c.callbacks.tags))
-
         return config
 
     @classmethod
-    def get_kb_config(
+    def get_hf_baseline(
             cls
     ):
         config = cls.get_default()
 
-        config.get('pre_processor').variants = [
-            RegistrationKey(name='processor',
-                            tags={'kb'},
-                            namespace='nle/tos'),
-            RegistrationKey(name='processor',
-                            tags={'kb', 'hf'},
-                            namespace='nle/tos')
-        ]
+        config.model = RegistrationKey(name='model',
+                                       tags={'hf', 'baseline'},
+                                       namespace='nle/tos')
 
-        config.get('model').variants = [
-            RegistrationKey(name='model',
-                            tags={'hf', 'memory'},
-                            namespace='nle/tos'),
-            RegistrationKey(name='model',
-                            tags={'memory'},
-                            namespace='nle/tos')
-        ]
+        config.pre_processor = RegistrationKey(name='processor',
+                                               tags={'hf'},
+                                               namespace='nle/tos')
 
-        config.get('callbacks').variants = [
-            RegistrationKey(name='callback',
-                            tags={'hf', 'memory'},
-                            namespace='nle/tos'),
-            RegistrationKey(name='callback',
-                            tags={'memory'},
-                            namespace='nle/tos')
-        ]
+        config.callbacks = RegistrationKey(name='callback',
+                                           tags={'hf'},
+                                           namespace='nle/tos')
+
+        return config
+
+    @classmethod
+    def get_hf_kb_config(
+            cls
+    ):
+        config = cls.get_default()
+
+        config.model = RegistrationKey(name='model',
+                                       tags={'hf', 'memory'},
+                                       namespace='nle/tos')
+
+        config.pre_processor = RegistrationKey(name='processor',
+                                               tags={'kb', 'hf'},
+                                               namespace='nle/tos')
+
+        config.callbacks = RegistrationKey(name='callback',
+                                           tags={'hf', 'memory'},
+                                           namespace='nle/tos')
+
+        config.metrics = RegistrationKey(name='metrics',
+                                         tags={'memory'},
+                                         namespace='nle/tos')
+
+        return config
+
+    @classmethod
+    def get_baseline_kb_config(
+            cls
+    ):
+        config = cls.get_default()
+
+        config.model = RegistrationKey(name='model',
+                                       tags={'memory'},
+                                       namespace='nle/tos')
+
+        config.pre_processor = RegistrationKey(name='processor',
+                                               tags={'kb'},
+                                               namespace='nle/tos')
+
+        config.callbacks = RegistrationKey(name='callback',
+                                           tags={'memory'},
+                                           namespace='nle/tos')
 
         config.metrics = RegistrationKey(name='metrics',
                                          tags={'memory'},
@@ -92,13 +95,22 @@ class ToSRoutineConfig(NLERoutineConfig):
 @register
 def register_routines():
     Registry.add_and_bind_variants(config_class=ToSRoutineConfig,
+                                   config_constructor=ToSRoutineConfig.get_hf_baseline,
                                    component_class=CVRoutine,
                                    name='routine',
+                                   tags={'hf', 'baseline'},
                                    namespace='nle/tos')
 
     Registry.add_and_bind_variants(config_class=ToSRoutineConfig,
-                                   config_constructor=ToSRoutineConfig.get_kb_config,
+                                   config_constructor=ToSRoutineConfig.get_hf_kb_config,
                                    component_class=CVRoutine,
                                    name='routine',
-                                   tags={'kb'},
+                                   tags={'kb', 'hf'},
+                                   namespace='nle/tos')
+
+    Registry.add_and_bind_variants(config_class=ToSRoutineConfig,
+                                   config_constructor=ToSRoutineConfig.get_baseline_kb_config,
+                                   component_class=CVRoutine,
+                                   name='routine',
+                                   tags={'kb', 'baseline'},
                                    namespace='nle/tos')

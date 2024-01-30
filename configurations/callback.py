@@ -1,7 +1,7 @@
 from typing import Type
 
-from cinnamon_core.core.registry import Registry, register
 from cinnamon_core.core.configuration import Configuration, C
+from cinnamon_core.core.registry import Registry, register
 from components.callback import SamplerPriorityUpdater
 
 
@@ -44,22 +44,6 @@ class SamplerPriorityUpdaterConfig(Configuration):
                    is_required=True,
                    allowed_range=lambda value: value > 0,
                    description='Period (in number of epochs) to update kb sampler priority weights.')
-
-        return config
-
-
-class MemoryInfoRetrieverConfig(Configuration):
-
-    @classmethod
-    def get_default(
-            cls: Type[C]
-    ) -> C:
-        config = super().get_default()
-
-        config.add(name='memory_metrics',
-                   is_child=True,
-                   is_required=True,
-                   description='Memory metrics to compute.')
 
         return config
 
