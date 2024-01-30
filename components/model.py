@@ -80,9 +80,13 @@ class HFMANN(THNetwork):
         self.kb = processor.find('kb')
 
     def input_additional_info(
-            self
+            self,
+            batch_x: Any,
+            batch_y: Any
     ) -> Dict:
-        sampler_info = self.kb_sampler.run(kb=self.kb)
+        batch_size = batch_x['input_ids'].shape[0]
+        sampler_info = self.kb_sampler.run(kb=self.kb,
+                                           batch_size=batch_size)
         return {key: value.to(self.get_device()) for key, value in sampler_info.items()}
 
     def batch_loss(
@@ -118,7 +122,8 @@ class HFMANN(THNetwork):
         memory_indices = input_additional_info['memory_indices'].to(th.long)
 
         # [bs, M]
-        memory_targets = batch_y['memory_targets'][:, memory_indices]
+        memory_targets = th.take_along_dim(batch_y['memory_targets'], memory_indices, dim=1)
+        output['sampled_indices'] = memory_indices
 
         ss_loss = strong_supervision(memory_scores=output['memory_scores'],
                                      memory_targets=memory_targets,

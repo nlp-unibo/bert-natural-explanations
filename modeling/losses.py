@@ -9,8 +9,6 @@ def strong_supervision(
     # memory_scores:    [bs, M]
     # memory_targets:   [bs, M]
 
-    M = memory_scores.shape[1]
-
     # [bs,]
     valid_samples_mask = th.clip(memory_targets.sum(dim=-1), min=0.0, max=1.0)
 

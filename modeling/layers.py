@@ -29,14 +29,13 @@ class MemoryLookup(th.nn.Module):
             memory_embedding,
     ):
         # input_embedding:  [bs, d]
-        # memory_embedding: [M, d]
+        # memory_embedding: [bs, M, d]
 
-        M = memory_embedding.shape[0]
+        M = memory_embedding.shape[1]
         batch_size = input_embedding.shape[0]
 
         # [bs * M, 2 * d]
-        mlp_input = th.concat((input_embedding[:, None, :].expand(-1, M, -1),
-                               memory_embedding[None, :, :].expand(batch_size, -1, -1)), dim=-1)
+        mlp_input = th.concat((input_embedding[:, None, :].expand(-1, M, -1), memory_embedding), dim=-1)
         mlp_input = mlp_input.view(batch_size * M, -1)
 
         # [bs, M]
@@ -53,11 +52,11 @@ class MemoryExtraction(th.nn.Module):
             memory_embedding,
             memory_scores
     ):
-        # memory_embedding: [M, d]
+        # memory_embedding: [bs, M, d]
         # memory_scores:    [bs, M]
 
         # [bs, d]
-        return th.mean(memory_embedding[None, :, :] * memory_scores[:, :, None], dim=1)
+        return th.mean(memory_embedding * memory_scores[:, :, None], dim=1)
 
 
 class MemoryReasoning(th.nn.Module):

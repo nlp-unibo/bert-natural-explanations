@@ -37,6 +37,8 @@ class MemoryUsage(Metric):
         """
 
         memory_scores = np.concatenate(y_pred['memory_scores'], axis=0)
+        memory_indices = np.concatenate(y_pred['sampled_indices'], axis=0)
+        memory_scores = np.take_along_axis(memory_scores, memory_indices, axis=1)
         label = np.concatenate(y_true['label'], axis=0)
 
         # Only positive examples
@@ -65,7 +67,10 @@ class MemoryCoverage(Metric):
         """
 
         memory_scores = np.concatenate(y_pred['memory_scores'], axis=0)
+        memory_indices = np.concatenate(y_pred['sampled_indices'], axis=0)
+        memory_scores = np.take_along_axis(memory_scores, memory_indices, axis=1)
         memory_targets = np.concatenate(y_true['memory_targets'], axis=0)
+        memory_targets = np.take_along_axis(memory_targets, memory_indices, axis=1)
 
         label = np.concatenate(y_true['label'], axis=0)
 
@@ -96,7 +101,10 @@ class MemoryCoveragePrecision(Metric):
         """
 
         memory_scores = np.concatenate(y_pred['memory_scores'], axis=0)
+        memory_indices = np.concatenate(y_pred['sampled_indices'], axis=0)
+        memory_scores = np.take_along_axis(memory_scores, memory_indices, axis=1)
         memory_targets = np.concatenate(y_true['memory_targets'], axis=0)
+        memory_targets = np.take_along_axis(memory_targets, memory_indices, axis=1)
 
         label = np.concatenate(y_true['label'], axis=0)
 
@@ -143,7 +151,10 @@ class MemoryPrecision(Metric):
     ) -> Any:
 
         memory_scores = np.concatenate(y_pred['memory_scores'], axis=0)
+        memory_indices = np.concatenate(y_pred['sampled_indices'], axis=0)
+        memory_scores = np.take_along_axis(memory_scores, memory_indices, axis=1)
         memory_targets = np.concatenate(y_true['memory_targets'], axis=0)
+        memory_targets = np.take_along_axis(memory_targets, memory_indices, axis=1)
 
         label = np.concatenate(y_true['label'], axis=0)
 
@@ -181,7 +192,10 @@ class MemoryMRR(Metric):
             as_dict: bool = False
     ) -> Any:
         memory_scores = np.concatenate(y_pred['memory_scores'], axis=0)
+        memory_indices = np.concatenate(y_pred['sampled_indices'], axis=0)
+        memory_scores = np.take_along_axis(memory_scores, memory_indices, axis=1)
         memory_targets = np.concatenate(y_true['memory_targets'], axis=0)
+        memory_targets = np.take_along_axis(memory_targets, memory_indices, axis=1)
 
         label = np.concatenate(y_true['label'], axis=0)
 
@@ -193,6 +207,7 @@ class MemoryMRR(Metric):
                                      memory_targets=s_mem_targets,
                                      threshold=self.threshold)
                for s_mem_scores, s_mem_targets in zip(memory_scores, memory_targets)]
+        mrr = np.sum(mrr) / memory_scores.shape[0]
 
         return mrr if not as_dict else {self.name: mrr}
 
@@ -206,7 +221,10 @@ class MemoryClassificationPrecision(Metric):
             as_dict: bool = False
     ) -> Any:
         memory_scores = np.concatenate(y_pred['memory_scores'], axis=0)
+        memory_indices = np.concatenate(y_pred['sampled_indices'], axis=0)
+        memory_scores = np.take_along_axis(memory_scores, memory_indices, axis=1)
         memory_targets = np.concatenate(y_true['memory_targets'], axis=0)
+        memory_targets = np.take_along_axis(memory_targets, memory_indices, axis=1)
 
         predictions = np.concatenate(y_pred['logits'], axis=0)
         label = np.concatenate(y_true['label'], axis=0)
@@ -233,7 +251,10 @@ class NonMemoryClassificationPrecision(Metric):
             as_dict: bool = False
     ) -> Any:
         memory_scores = np.concatenate(y_pred['memory_scores'], axis=0)
+        memory_indices = np.concatenate(y_pred['sampled_indices'], axis=0)
+        memory_scores = np.take_along_axis(memory_scores, memory_indices, axis=1)
         memory_targets = np.concatenate(y_true['memory_targets'], axis=0)
+        memory_targets = np.take_along_axis(memory_targets, memory_indices, axis=1)
 
         predictions = np.concatenate(y_pred['logits'], axis=0)
         label = np.concatenate(y_true['label'], axis=0)
@@ -260,6 +281,8 @@ class MemoryAPM(Metric):
             as_dict: bool = False
     ) -> Any:
         memory_scores = np.concatenate(y_pred['memory_scores'], axis=0)
+        memory_indices = np.concatenate(y_pred['sampled_indices'], axis=0)
+        memory_scores = np.take_along_axis(memory_scores, memory_indices, axis=1)
         label = np.concatenate(y_true['label'], axis=0)
 
         # Only positive examples

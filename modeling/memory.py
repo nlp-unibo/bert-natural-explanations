@@ -172,23 +172,29 @@ class M_MANN(th.nn.Module):
         # [bs, N]
         attention_mask = inputs['attention_mask']
 
-        # [M, N]
+        # [bs, M, N]
         kb_input_ids = input_additional_info['kb_input_ids']
 
-        # [M, N]
+        # [bs, M, N]
         kb_attention_mask = input_additional_info['kb_attention_mask']
+
+        M = kb_input_ids.shape[1]
+        batch_size = input_ids.shape[0]
 
         # Input
         # [bs, N, d]
         input_embeddings = self.embedding(input_ids) * attention_mask[:, :, None]
         # [bs, d]
-        input_embedding = th.sum(input_embeddings, dim=1) / attention_mask.sum(dim=-1)[:, None]
+        input_embedding = th.sum(input_embeddings, dim=1)
 
         # Memory
-        # [M, N, d]
+        # [bs * M, N, d]
+        kb_input_ids = kb_input_ids.view(batch_size * M, - 1)
+        kb_attention_mask = kb_attention_mask.view(batch_size * M, -1)
         memory_embeddings = self.embedding(kb_input_ids) * kb_attention_mask[:, :, None]
-        # [M, d]
-        memory_embedding = th.sum(memory_embeddings, dim=1) / kb_attention_mask.sum(dim=-1)[:, None]
+
+        # [bs, M, d]
+        memory_embedding = th.sum(memory_embeddings, dim=1).view(batch_size, M, -1)
 
         # [bs, M]
         memory_scores = self.memory_lookup(input_embedding=input_embedding,
