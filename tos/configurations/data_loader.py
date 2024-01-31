@@ -39,10 +39,10 @@ class ToSLoaderConfig(DataLoaderConfig):
         config.add(name='category',
                    variants=[
                        'A',
-                       # 'CH',
-                       # 'CR',
-                       # 'LTD',
-                       # 'TER'
+                       'CH',
+                       'CR',
+                       'LTD',
+                       'TER'
                    ],
                    is_required=True)
 

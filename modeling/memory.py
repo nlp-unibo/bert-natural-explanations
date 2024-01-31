@@ -33,7 +33,7 @@ class M_HFMANN(th.nn.Module):
         self.dropout = th.nn.Dropout(p=dropout_rate)
         self.pre_classifier = th.nn.Linear(in_features=self.embedding_config.hidden_size * 2,
                                            out_features=self.embedding_config.hidden_size)
-        self.pre_activation = th.nn.ReLU()
+        self.pre_activation = th.nn.LeakyReLU()
         self.classifier = th.nn.Linear(out_features=num_classes,
                                        in_features=self.embedding_config.hidden_size)
 
@@ -69,6 +69,9 @@ class M_HFMANN(th.nn.Module):
         # [M, N]
         kb_attention_mask = input_additional_info['kb_attention_mask']
 
+        M = kb_input_ids.shape[0]
+        batch_size = input_ids.shape[0]
+
         # Input
         # [bs, N, d]
         input_embeddings = self.embedding(input_ids=input_ids,
@@ -77,6 +80,7 @@ class M_HFMANN(th.nn.Module):
         input_embedding = th.mean(input_embeddings, dim=1)
 
         # Memory
+
         # [M, N, d]
         memory_embeddings = self.embedding(input_ids=kb_input_ids,
                                            attention_mask=kb_attention_mask).last_hidden_state
@@ -131,7 +135,16 @@ class M_MANN(th.nn.Module):
                                          embedding_dim=embedding_dimension,
                                          padding_idx=0)
         if embedding_matrix is not None:
-            self.embedding.weight = th.nn.Parameter(th.tensor(embedding_matrix, dtype=th.float32))
+            self.embedding.weight = th.nn.Parameter(th.tensor(embedding_matrix, dtype=th.float32),
+                                                    requires_grad=True)
+
+        self.memory_embedding = th.nn.Embedding(num_embeddings=vocab_size,
+                                                embedding_dim=embedding_dimension,
+                                                padding_idx=0)
+
+        if embedding_matrix is not None:
+            self.memory_embedding.weight = th.nn.Parameter(th.tensor(embedding_matrix, dtype=th.float32),
+                                                           requires_grad=True)
 
         # Memory
         self.memory_lookup = MemoryLookup(embedding_dim=embedding_dimension,
@@ -142,7 +155,7 @@ class M_MANN(th.nn.Module):
         self.dropout = th.nn.Dropout(p=dropout_rate)
         self.pre_classifier = th.nn.Linear(in_features=embedding_dimension * 2,
                                            out_features=pre_classifier_weight)
-        self.pre_activation = th.nn.ReLU()
+        self.pre_activation = th.nn.LeakyReLU()
         self.classifier = th.nn.Linear(out_features=num_classes,
                                        in_features=pre_classifier_weight)
 
@@ -172,14 +185,11 @@ class M_MANN(th.nn.Module):
         # [bs, N]
         attention_mask = inputs['attention_mask']
 
-        # [bs, M, N]
+        # [M, N]
         kb_input_ids = input_additional_info['kb_input_ids']
 
-        # [bs, M, N]
+        # [M, N]
         kb_attention_mask = input_additional_info['kb_attention_mask']
-
-        M = kb_input_ids.shape[1]
-        batch_size = input_ids.shape[0]
 
         # Input
         # [bs, N, d]
@@ -188,13 +198,11 @@ class M_MANN(th.nn.Module):
         input_embedding = th.sum(input_embeddings, dim=1)
 
         # Memory
-        # [bs * M, N, d]
-        kb_input_ids = kb_input_ids.view(batch_size * M, - 1)
-        kb_attention_mask = kb_attention_mask.view(batch_size * M, -1)
-        memory_embeddings = self.embedding(kb_input_ids) * kb_attention_mask[:, :, None]
+        # [M, N, d]
+        memory_embeddings = self.memory_embedding(kb_input_ids) * kb_attention_mask[:, :, None]
 
-        # [bs, M, d]
-        memory_embedding = th.sum(memory_embeddings, dim=1).view(batch_size, M, -1)
+        # [M, d]
+        memory_embedding = th.sum(memory_embeddings, dim=1)
 
         # [bs, M]
         memory_scores = self.memory_lookup(input_embedding=input_embedding,

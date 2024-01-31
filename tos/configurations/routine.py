@@ -91,6 +91,24 @@ class ToSRoutineConfig(NLERoutineConfig):
 
         return config
 
+    @classmethod
+    def get_baseline_config(
+            cls
+    ):
+        config = cls.get_default()
+
+        config.model = RegistrationKey(name='model',
+                                       tags={'baseline', 'lstm'},
+                                       namespace='nle/tos')
+
+        config.pre_processor = RegistrationKey(name='processor',
+                                               namespace='nle/tos')
+
+        config.callbacks = RegistrationKey(name='callback',
+                                           namespace='nle/tos')
+
+        return config
+
 
 @register
 def register_routines():
@@ -113,4 +131,11 @@ def register_routines():
                                    component_class=CVRoutine,
                                    name='routine',
                                    tags={'kb', 'baseline'},
+                                   namespace='nle/tos')
+
+    Registry.add_and_bind_variants(config_class=ToSRoutineConfig,
+                                   config_constructor=ToSRoutineConfig.get_baseline_config,
+                                   component_class=CVRoutine,
+                                   name='routine',
+                                   tags={'baseline', 'lstm'},
                                    namespace='nle/tos')

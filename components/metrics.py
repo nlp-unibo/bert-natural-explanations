@@ -125,7 +125,7 @@ class MemoryPrecision(Metric):
             threshold,
             k
     ):
-        top_k_indexes, top_k_values = topk(memory_scores, k=k, ascending=False)
+        top_k_indexes = np.argsort(memory_scores)[::-1][:k]
         target_indexes = np.argwhere(memory_targets).ravel()
         hits = set(top_k_indexes).intersection(target_indexes)
 

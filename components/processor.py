@@ -160,6 +160,10 @@ class THTokenizer(Processor):
         data.add(name='attention_mask', value=[])
         data.add(name='id', value=[])
 
+        translate_dict = {c: " " for c in '!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n'}
+        translate_map = str.maketrans(translate_dict)
+        data.text = [text.translate(translate_map) for text in data.text]
+
         if is_training_data:
             self.fit(data=data)
 
@@ -223,9 +227,9 @@ class PosWeightProcessor(Processor):
             is_training_data: bool = False
     ) -> Optional[FieldDict]:
         if is_training_data:
-            self.pos_weight = compute_class_weight(y=data.label,
-                                                   class_weight='balanced',
-                                                   classes=[0, 1])[1]
+            self.class_weights = compute_class_weight(y=data.label,
+                                                      class_weight='balanced',
+                                                      classes=[0, 1])
 
         return data
 
@@ -266,7 +270,7 @@ class ModelProcessor(Processor):
 
         # output
         y = {
-            'label': th.tensor(y, dtype=th.float32).to(device),
+            'label': th.tensor(y, dtype=th.long).to(device),
         }
 
         return x, y
@@ -341,7 +345,7 @@ class ModelMemoryProcessor(Processor):
             'sample_id': sample_id.to(device)
         }
 
-        label = th.tensor(np.array(label), dtype=th.float32)
+        label = th.tensor(np.array(label), dtype=th.long)
         memory_targets = th.tensor(np.array(memory_targets), dtype=th.float32)
 
         # output
@@ -396,7 +400,7 @@ class THClassifierProcessor(Processor):
             data: Any,
             is_training_data: bool = False
     ) -> Any:
-        data['logits'] = th.round(th.sigmoid(data['logits']))
+        data['logits'] = th.argmax(data['logits'], dim=-1)
         return data
 
 
