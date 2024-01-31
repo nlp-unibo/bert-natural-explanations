@@ -46,9 +46,7 @@ class M_HFBaseline(th.nn.Module):
         embeddings = self.embedding(input_ids=input_ids,
                                     attention_mask=attention_mask).last_hidden_state
         # [bs, d]
-        input_embedding = th.mean(embeddings, dim=1)
-
-        pre_logits = self.pre_classifier(input_embedding)
+        pre_logits = self.pre_classifier(embeddings[:, 0, :])
         pre_logits = self.pre_activation(pre_logits)
         if self.training:
             pre_logits = self.dropout(pre_logits)

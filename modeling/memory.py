@@ -77,7 +77,7 @@ class M_HFMANN(th.nn.Module):
         input_embeddings = self.embedding(input_ids=input_ids,
                                           attention_mask=attention_mask).last_hidden_state
         # [bs, d]
-        input_embedding = th.mean(input_embeddings, dim=1)
+        input_embedding = input_embeddings[:, 0, :]
 
         # Memory
 
@@ -85,7 +85,7 @@ class M_HFMANN(th.nn.Module):
         memory_embeddings = self.embedding(input_ids=kb_input_ids,
                                            attention_mask=kb_attention_mask).last_hidden_state
         # [M, d]
-        memory_embedding = th.mean(memory_embeddings, dim=1)
+        memory_embedding = memory_embeddings[:, 0, :]
 
         # [bs, M]
         memory_scores = self.memory_lookup(input_embedding=input_embedding,

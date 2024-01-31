@@ -13,7 +13,7 @@ if __name__ == '__main__':
         doc_names = [name.strip() for name in doc_names]
 
     folds = []
-    for fold_idx in range(10):
+    for fold_idx in range(4):
         fold_idx_str = f'fold_{fold_idx}'
         fold_data = folds_json[fold_idx_str]
         train_indexes = from_doc_id_to_name(doc_ids=fold_data['train'], doc_names=doc_names)
@@ -21,4 +21,4 @@ if __name__ == '__main__':
         test_indexes = from_doc_id_to_name(doc_ids=fold_data['test'], doc_names=doc_names)
         folds.append((train_indexes, val_indexes, test_indexes))
 
-    save_pickle('../prebuilt_folds/tos_folds.pkl', folds)
+    save_pickle('../prebuilt_folds/ibm_4_folds.pkl', folds)
