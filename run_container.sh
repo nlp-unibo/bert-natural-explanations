@@ -1,0 +1,1 @@
+docker run --runtime=nvidia --gpus all -d --mount type=bind,src=/"$(pwd)/cinnamon_core",target=/cinnamon_core --mount type=bind,src=/"$(pwd)/cinnamon_generic",target=/cinnamon_generic --mount type=bind,src=/"$(pwd)/cinnamon_th",target=/cinnamon_th --mount type=bind,src=/"$(pwd)/bert-natural-explanations",target=/bert-natural-explanations -it --name $2 nle python3 runnables/$1
