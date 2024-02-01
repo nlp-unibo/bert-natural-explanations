@@ -19,7 +19,7 @@ class HFBaselineConfig(NetworkConfig):
 
         config.epochs = 50
         config.add(name='hf_model_name',
-                   value='roberta-large',
+                   variants=['roberta-large'],
                    is_required=True,
                    description="HugginFace's model card.")
         config.add(name='freeze_hf',

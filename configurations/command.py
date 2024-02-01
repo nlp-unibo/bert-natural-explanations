@@ -18,7 +18,12 @@ class CommandConfig(Configuration):
         config.add(name='tag_mapping',
                    type_hint=Dict[str, str],
                    value={
-                       'strong_supervision': 'sup'
+                       'routine.model.ss_coefficient': 'SS',
+                       'routine.model.kb_sampler.': 'sampling=',
+                       'routine.model.hf_model_name': 'model_card',
+                       'routine.data_loader.topics': 'topics',
+                       'routine.data_splitter.topics': 'topics',
+                       'routine.data_loader.category': 'category'
                    },
                    description='Tag or partial tag names that are replaced with corresponding map value.'
                                'This mapping is used to automatically build a  component run name.')
@@ -26,8 +31,11 @@ class CommandConfig(Configuration):
         config.add(name='run_name_fields',
                    type_hint=List[Callable[[str], str]],
                    value=[
-                       lambda tags: [item for item in ['baseline', 'memory'] if item in tags][0],
-                       lambda tags: 'sup' if 'sup=True' in tags else None,
+                       lambda tags: [tag.split('.')[-1] for tag in tags if 'topics=' in tag or 'category=' in tag][0],
+                       lambda tags: [tag.split('model_card=')[-1] for tag in tags if 'model_card' in tag][0],
+                       lambda tags: 'kb' if len([tag for tag in tags if 'kb' in tag]) else None,
+                       lambda tags: None if not len([tag for tag in tags if 'sampling' in tag]) else [tag for tag in tags if 'sampling' in tag][0],
+                       lambda tags: None if not len([tag for tag in tags if 'SS' in tag]) else [tag for tag in tags if 'SS=' in tag][0],
                    ],
                    description='List of tag filters to extract run name fields.')
 

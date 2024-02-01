@@ -17,6 +17,8 @@ class Command(Component):
         for real_tag, replace_tag in self.tag_mapping.items():
             flatten_tags = flatten_tags.replace(real_tag, replace_tag)
 
+        flatten_tags = set(flatten_tags.split(os.linesep))
+
         for field_extractor in self.run_name_fields:
             run_value = field_extractor(flatten_tags)
             if run_value is not None:
