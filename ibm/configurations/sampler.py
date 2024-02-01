@@ -34,13 +34,6 @@ class IBMKBSamplerConfig(KBSamplerConfig):
 @register
 def register_samplers():
     Registry.add_and_bind(config_class=IBMKBSamplerConfig,
-                          config_constructor=IBMKBSamplerConfig.get_full_config,
-                          component_class=KBSampler,
-                          name='sampler',
-                          tags={'full'},
-                          namespace='nle/ibm')
-
-    Registry.add_and_bind(config_class=IBMKBSamplerConfig,
                           component_class=KBSampler,
                           name='sampler',
                           tags={'uniform'},

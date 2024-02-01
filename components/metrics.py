@@ -3,7 +3,6 @@ from typing import Any
 import numpy as np
 
 from cinnamon_generic.components.metrics import LambdaMetric, Metric
-from utility.numpy_utility import topk
 
 
 class ClassificationMetric(LambdaMetric):
@@ -122,7 +121,6 @@ class MemoryPrecision(Metric):
             self,
             memory_scores,
             memory_targets,
-            threshold,
             k
     ):
         top_k_indexes = np.argsort(memory_scores)[::-1][:k]
@@ -132,7 +130,7 @@ class MemoryPrecision(Metric):
         if not hits:
             return 0.0
 
-        th_hits = [memory_scores[hit_index] for hit_index in hits if memory_scores[hit_index] >= threshold]
+        th_hits = [memory_scores[hit_index] for hit_index in hits]
 
         if len(th_hits):
             return 1.0
@@ -159,8 +157,7 @@ class MemoryPrecision(Metric):
 
         th_top_k_hits = [self.in_top_k(memory_scores=s_mem_scores,
                                        memory_targets=s_mem_targets,
-                                       k=self.k,
-                                       threshold=self.threshold)
+                                       k=self.k)
                          for s_mem_scores, s_mem_targets in zip(memory_scores, memory_targets)]
         mp = np.sum(th_top_k_hits) / memory_scores.shape[0]
 
@@ -173,7 +170,6 @@ class MemoryMRR(Metric):
             self,
             memory_scores,
             memory_targets,
-            threshold,
     ):
         target_indexes = np.argwhere(memory_targets).ravel()
         sorted_score_indexes = np.argsort(memory_scores)[::-1]
@@ -182,7 +178,7 @@ class MemoryMRR(Metric):
             return 0.0
 
         best_target_index = np.where(np.in1d(sorted_score_indexes, target_indexes))[0][0]
-        return 0.0 if memory_scores[best_target_index] < threshold else 1 / (best_target_index + 1)
+        return 1 / (best_target_index + 1)
 
     def run(
             self,
@@ -202,8 +198,7 @@ class MemoryMRR(Metric):
         memory_targets = memory_targets[label == 1]
 
         mrr = [self.best_target_rank(memory_scores=s_mem_scores,
-                                     memory_targets=s_mem_targets,
-                                     threshold=self.threshold)
+                                     memory_targets=s_mem_targets)
                for s_mem_scores, s_mem_targets in zip(memory_scores, memory_targets)]
         mrr = np.sum(mrr) / memory_scores.shape[0]
 

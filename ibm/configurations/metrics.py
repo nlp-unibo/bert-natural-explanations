@@ -3,7 +3,7 @@ from cinnamon_generic.components.metrics import MetricPipeline
 from cinnamon_generic.configurations.pipeline import PipelineConfig
 from components.metrics import MemoryUsage, MemoryCoverage, MemoryCoveragePrecision, MemoryPrecision, MemoryMRR, \
     MemoryClassificationPrecision, NonMemoryClassificationPrecision, MemoryAPM
-from configurations.metrics import MemoryMetricConfig
+from configurations.metrics import MemoryMetricConfig, MetricConfig
 
 
 class IBMMemoryUsageConfig(MemoryMetricConfig):
@@ -48,7 +48,7 @@ class IBMMemoryCoveragePrecisionConfig(MemoryMetricConfig):
         return config
 
 
-class IBMMemoryPrecisionConfig(MemoryMetricConfig):
+class IBMMemoryPrecisionConfig(MetricConfig):
 
     @classmethod
     def get_default(
@@ -57,7 +57,6 @@ class IBMMemoryPrecisionConfig(MemoryMetricConfig):
         config = super().get_default()
 
         config.name = 'M_P@K'
-        config.threshold = 0.1
 
         config.add(name='k',
                    is_required=True,
@@ -89,7 +88,7 @@ class IBMMemoryPrecisionConfig(MemoryMetricConfig):
         return config
 
 
-class IBMMemoryMRRConfig(MemoryMetricConfig):
+class IBMMemoryMRRConfig(MetricConfig):
 
     @classmethod
     def get_default(
@@ -98,7 +97,6 @@ class IBMMemoryMRRConfig(MemoryMetricConfig):
         config = super().get_default()
 
         config.name = 'M_MRR'
-        config.threshold = 0.1
 
         return config
 

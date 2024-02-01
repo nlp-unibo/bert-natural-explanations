@@ -4,7 +4,7 @@ from cinnamon_core.core.configuration import Configuration, C
 from cinnamon_core.core.registry import Registry, RegistrationKey, register
 from cinnamon_generic.components.processor import ProcessorPipeline
 from cinnamon_generic.configurations.pipeline import OrderedPipelineConfig
-from components.processor import HFTokenizer, HFKBTokenizer, ModelProcessor, THTokenizer, THKBTokenizer, ModelMemoryProcessor
+from components.processor import HFTokenizer, HFKBTokenizer, ModelProcessor, ModelMemoryProcessor
 
 
 class HFTokenizerConfig(Configuration):
@@ -16,7 +16,7 @@ class HFTokenizerConfig(Configuration):
         config = super().get_default()
 
         config.add(name='hf_model_name',
-                   value='distilbert-base-uncased',
+                   value='roberta-large',
                    is_required=True,
                    type_hint=str,
                    description="HuggingFace's model card name.")
@@ -24,26 +24,7 @@ class HFTokenizerConfig(Configuration):
                    value={
                        'truncation': True,
                        'add_special_tokens': True,
-                       'max_length': 200
-                   },
-                   type_hint=Dict,
-                   description='Additional tokenization arguments.')
-
-        return config
-
-
-class THTokenizerConfig(Configuration):
-
-    @classmethod
-    def get_default(
-            cls: Type[C]
-    ) -> C:
-        config = super().get_default()
-
-        config.add(name='tokenization_args',
-                   value={
-                       'language': 'en',
-                       'tokenizer': 'basic_english',
+                       'max_length': 140
                    },
                    type_hint=Dict,
                    description='Additional tokenization arguments.')
@@ -64,7 +45,7 @@ class ModelProcessorConfig(Configuration):
                    type_hint=int,
                    description='Number of processes to use for data loading.')
         config.add(name='batch_size',
-                   value=8,
+                   value=4,
                    type_hint=int,
                    is_required=True,
                    description='Batch size for aggregating samples.')
@@ -85,18 +66,6 @@ def register_processors():
                           component_class=HFKBTokenizer,
                           name='processor',
                           tags={'tokenizer', 'kb', 'hf'},
-                          namespace='nle/tos')
-
-    Registry.add_and_bind(config_class=THTokenizerConfig,
-                          component_class=THTokenizer,
-                          name='processor',
-                          tags={'tokenizer'},
-                          namespace='nle/tos')
-
-    Registry.add_and_bind(config_class=THTokenizerConfig,
-                          component_class=THKBTokenizer,
-                          name='processor',
-                          tags={'tokenizer', 'kb'},
                           namespace='nle/tos')
 
     # Model
@@ -161,53 +130,4 @@ def register_processors():
                                    },
                                    name='processor',
                                    tags={'kb', 'hf'},
-                                   namespace='nle/tos')
-
-    Registry.add_and_bind_variants(config_class=OrderedPipelineConfig,
-                                   component_class=ProcessorPipeline,
-                                   config_constructor=OrderedPipelineConfig.from_keys,
-                                   config_kwargs={
-                                       'keys': [
-                                           RegistrationKey(name='processor',
-                                                           tags={'tokenizer'},
-                                                           namespace='nle/tos'),
-                                           RegistrationKey(name='processor',
-                                                           tags={'weights'},
-                                                           namespace='nle'),
-                                           RegistrationKey(name='processor',
-                                                           tags={'model'},
-                                                           namespace='nle/tos')
-                                       ],
-                                       'names': [
-                                           'tokenizer',
-                                           'weights_processor',
-                                           'model_processor'
-                                       ]
-                                   },
-                                   name='processor',
-                                   namespace='nle/tos')
-
-    Registry.add_and_bind_variants(config_class=OrderedPipelineConfig,
-                                   component_class=ProcessorPipeline,
-                                   config_constructor=OrderedPipelineConfig.from_keys,
-                                   config_kwargs={
-                                       'keys': [
-                                           RegistrationKey(name='processor',
-                                                           tags={'tokenizer', 'kb'},
-                                                           namespace='nle/tos'),
-                                           RegistrationKey(name='processor',
-                                                           tags={'weights'},
-                                                           namespace='nle'),
-                                           RegistrationKey(name='processor',
-                                                           tags={'model', 'memory'},
-                                                           namespace='nle/tos')
-                                       ],
-                                       'names': [
-                                           'kb_tokenizer',
-                                           'weights_processor',
-                                           'model_processor'
-                                       ]
-                                   },
-                                   name='processor',
-                                   tags={'kb'},
                                    namespace='nle/tos')

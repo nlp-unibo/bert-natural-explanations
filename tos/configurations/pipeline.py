@@ -20,12 +20,6 @@ class ToSResultsPipelineConfig(ResultsPipelineConfig):
                             namespace='nle/tos'),
             RegistrationKey(name='routine',
                             tags={'kb', 'hf'},
-                            namespace='nle/tos'),
-            RegistrationKey(name='routine',
-                            tags={'kb', 'baseline'},
-                            namespace='nle/tos'),
-            RegistrationKey(name='routine',
-                            tags={'lstm', 'baseline'},
                             namespace='nle/tos')
         ]
 

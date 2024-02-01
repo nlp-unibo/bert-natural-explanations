@@ -21,41 +21,6 @@ from torchtext.vocab import build_vocab_from_iterator
 from torchtext.data import get_tokenizer
 
 
-# Input/Output
-
-class LabelProcessor(Processor):
-
-    def __init__(
-            self,
-            **kwargs
-    ):
-        super().__init__(**kwargs)
-        self.encoder = LabelEncoder()
-
-    def prepare_save_data(
-            self
-    ) -> Dict:
-        data = super().prepare_save_data()
-
-        data['encoder'] = self.encoder
-        return data
-
-    def clear(
-            self
-    ):
-        super().clear()
-        self.encoder = LabelEncoder()
-
-    def process(
-            self,
-            data: FieldDict,
-            is_training_data: bool = False
-    ):
-        label = data.label
-        data['label'] = self.encoder.fit_transform(label) if is_training_data else self.encoder.transform(label)
-        return data
-
-
 # Tokenizer
 
 
@@ -123,91 +88,9 @@ class HFKBTokenizer(HFTokenizer):
         return data
 
 
-class THTokenizer(Processor):
-
-    def __init__(
-            self,
-            **kwargs
-    ):
-        super().__init__(**kwargs)
-        self.tokenizer = get_tokenizer(**self.tokenization_args)
-        self.pad_token = '<PAD>'
-        self.unk_token = '<UNK>'
-
-    def fit(
-            self,
-            data: FieldDict,
-    ):
-        self.vocabulary = build_vocab_from_iterator(iterator=[self.tokenizer(text) for text in data.text],
-                                                    specials=[self.pad_token, self.unk_token],
-                                                    special_first=True)
-        self.vocab_size = len(self.vocabulary)
-
-    def tokenize(
-            self,
-            text: Iterable[str]
-    ) -> Any:
-        return [[self.vocabulary[token] if token in self.vocabulary else self.vocabulary[self.unk_token]
-                 for token in self.tokenizer(seq)] for seq in text]
-
-    def run(
-            self,
-            data: Optional[FieldDict] = None,
-            is_training_data: bool = False
-    ) -> Optional[FieldDict]:
-        data.add(name='pad_token_id', value=0)
-        data.add(name='input_ids', value=[])
-        data.add(name='attention_mask', value=[])
-        data.add(name='id', value=[])
-
-        translate_dict = {c: " " for c in '!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n'}
-        translate_map = str.maketrans(translate_dict)
-        data.text = [text.translate(translate_map) for text in data.text]
-
-        if is_training_data:
-            self.fit(data=data)
-
-        text = data.text
-        input_ids = self.tokenize(text=text)
-        attention_mask = [[1] * len(seq) for seq in input_ids]
-
-        data.input_ids.extend(input_ids)
-        data.attention_mask.extend(attention_mask)
-        data.id.extend(np.arange(len(text)).tolist())
-
-        return data
-
-
-class THKBTokenizer(THTokenizer):
-
-    def __init__(
-            self,
-            **kwargs
-    ):
-        super().__init__(**kwargs)
-        self.kb = None
-
-    def run(
-            self,
-            data: Optional[FieldDict] = None,
-            is_training_data: bool = False
-    ) -> Optional[FieldDict]:
-        data = super().run(data=data, is_training_data=is_training_data)
-
-        input_ids = self.tokenize(text=data.kb)
-        attention_mask = [[1] * len(seq) for seq in input_ids]
-        self.kb = FieldDict({
-            'input_ids': input_ids,
-            'attention_mask': attention_mask,
-            'pad_token_id': data.pad_token_id,
-        })
-
-        return data
-
-
 # Model
 
-class PosWeightProcessor(Processor):
+class ClassWeightProcessor(Processor):
 
     def __init__(
             self,

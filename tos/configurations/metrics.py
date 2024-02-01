@@ -1,14 +1,9 @@
-from typing import List
-
-from sklearn.metrics import f1_score
-
 from cinnamon_core.core.registry import Registry, register, RegistrationKey
 from cinnamon_generic.components.metrics import MetricPipeline
-from cinnamon_generic.configurations.metrics import LambdaMetricConfig, MetricConfig
 from cinnamon_generic.configurations.pipeline import PipelineConfig
 from components.metrics import MemoryUsage, MemoryCoverage, MemoryCoveragePrecision, MemoryPrecision, MemoryMRR, \
     MemoryClassificationPrecision, NonMemoryClassificationPrecision, MemoryAPM
-from configurations.metrics import MemoryMetricConfig
+from configurations.metrics import MemoryMetricConfig, MetricConfig
 
 
 class ToSMemoryUsageConfig(MemoryMetricConfig):
@@ -53,7 +48,7 @@ class ToSMemoryCoveragePrecisionConfig(MemoryMetricConfig):
         return config
 
 
-class ToSMemoryPrecisionConfig(MemoryMetricConfig):
+class ToSMemoryPrecisionConfig(MetricConfig):
 
     @classmethod
     def get_default(
@@ -62,7 +57,6 @@ class ToSMemoryPrecisionConfig(MemoryMetricConfig):
         config = super().get_default()
 
         config.name = 'M_P@K'
-        config.threshold = 0.5
 
         config.add(name='k',
                    is_required=True,
@@ -94,7 +88,7 @@ class ToSMemoryPrecisionConfig(MemoryMetricConfig):
         return config
 
 
-class ToSMemoryMRRConfig(MemoryMetricConfig):
+class ToSMemoryMRRConfig(MetricConfig):
 
     @classmethod
     def get_default(
@@ -103,7 +97,6 @@ class ToSMemoryMRRConfig(MemoryMetricConfig):
         config = super().get_default()
 
         config.name = 'M_MRR'
-        config.threshold = 0.5
 
         return config
 
