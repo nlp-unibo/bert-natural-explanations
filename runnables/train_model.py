@@ -13,13 +13,20 @@ if __name__ == '__main__':
     parser.add_argument('--name', '-n', default='pipeline', type=str)
     parser.add_argument('--tags', '-t', nargs='+', default={
         'routine.data_loader.category=A',
-        'routine.model.baseline',
-        'routine.model.hf'
+        'routine.hf',
+        'routine.kb',
+        'routine.model.hf',
+        'routine.model.hf_model_name=roberta-large',
+        'routine.model.kb_sampler.attention',
+        'routine.model.memory',
+        'routine.model.ss_coefficient=0.0'
     },
                         type=str)
     parser.add_argument('--namespace', '-ns', default='nle/tos', type=str)
-    parser.add_argument('--serialize', '-s', default=False, type=bool)
+    parser.add_argument('--serialize', '-s', default='True', type=str)
     args = parser.parse_args()
+
+    args.serialize = False if args.serialize.casefold() == 'false' else True
 
     logging_utility.logger.info(f'''
     Running model training with: 
