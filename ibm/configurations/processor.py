@@ -16,7 +16,7 @@ class HFTokenizerConfig(Configuration):
         config = super().get_default()
 
         config.add(name='hf_model_name',
-                   value='roberta-large',
+                   value='distilbert-base-uncased',
                    is_required=True,
                    type_hint=str,
                    description="HuggingFace's model card name.")
@@ -45,7 +45,7 @@ class ModelProcessorConfig(Configuration):
                    type_hint=int,
                    description='Number of processes to use for data loading.')
         config.add(name='batch_size',
-                   value=4,
+                   value=16,
                    type_hint=int,
                    is_required=True,
                    description='Batch size for aggregating samples.')
