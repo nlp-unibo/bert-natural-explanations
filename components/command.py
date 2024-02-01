@@ -31,7 +31,7 @@ class Command(Component):
             parse_args
     ) -> Tuple[Any, str]:
         parse_key = RegistrationKey(name=parse_args.name,
-                                    tags=parse_args.tags,
+                                    tags=set(parse_args.tags),
                                     namespace=parse_args.namespace)
         keys = [key for key in Registry.REGISTRY if key == parse_key]
         assert len(keys) == 1, f'Expected to find only one key but found {keys}'

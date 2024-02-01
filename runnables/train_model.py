@@ -23,7 +23,7 @@ if __name__ == '__main__':
     },
                         type=str)
     parser.add_argument('--namespace', '-ns', default='nle/tos', type=str)
-    parser.add_argument('--serialize', '-s', default='True', type=str)
+    parser.add_argument('--serialize', '-s', default='False', type=str)
     args = parser.parse_args()
 
     args.serialize = False if args.serialize.casefold() == 'false' else True
