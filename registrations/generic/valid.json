@@ -1,8 +1,0 @@
-[
-    "name:calibrator--tags:['default', 'grid']--namespace:generic",
-    "name:data_splitter--tags:['sklearn', 'tt']--namespace:generic",
-    "name:file_manager--tags:['default']--namespace:generic",
-    "name:helper--tags:['default']--namespace:generic",
-    "name:routine_processor--tags:['average', 'fold']--namespace:generic",
-    "name:routine_processor--tags:['average']--namespace:generic"
-]

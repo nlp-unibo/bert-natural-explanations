@@ -12,14 +12,15 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--name', '-n', default='pipeline', type=str)
     parser.add_argument('--tags', '-t', nargs='+', default={
-        'routine.data_loader.category=A',
+        'routine.data_loader.category=LTD',
         'routine.hf',
         'routine.kb',
         'routine.model.hf',
-        'routine.model.hf_model_name=roberta-large',
-        'routine.model.kb_sampler.attention',
+        'routine.model.hf_model_name=distilbert-base-uncased',
+        'routine.model.kb_sampler.gain',
+        'routine.model.kb_sampler.sampling_size=1',
         'routine.model.memory',
-        'routine.model.ss_coefficient=0.0'
+        'routine.model.ss_coefficient=1.0'
     },
                         type=str)
     parser.add_argument('--namespace', '-ns', default='nle/tos', type=str)

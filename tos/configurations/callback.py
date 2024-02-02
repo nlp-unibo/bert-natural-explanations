@@ -42,7 +42,6 @@ class ToSWandDBConfig(WandDBConfig):
         config = super().get_default()
 
         config.project = 'nle-tos'
-        config.disabled = False
 
         return config
 

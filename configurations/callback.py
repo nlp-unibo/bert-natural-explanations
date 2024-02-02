@@ -14,7 +14,7 @@ class WandDBConfig(Configuration):
         config = super().get_default()
 
         config.add(name='entity',
-                   value='federico-ruggeri6',
+                   value='',
                    is_required=True,
                    type_hint=str,
                    description='Profile name on wandb for login.')
@@ -24,7 +24,7 @@ class WandDBConfig(Configuration):
                    type_hint=str,
                    description='Project name on wandb.')
         config.add(name='disabled',
-                   value=True,
+                   value=False,
                    type_hint=bool,
                    description='If True, the callback is disabled.')
 

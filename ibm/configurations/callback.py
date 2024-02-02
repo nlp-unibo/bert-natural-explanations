@@ -42,7 +42,6 @@ class IBMWandDBConfig(WandDBConfig):
         config = super().get_default()
 
         config.project = 'nle-ibm'
-        config.disabled = False
 
         return config
 

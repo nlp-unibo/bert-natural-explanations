@@ -1,6 +1,4 @@
 FROM nvcr.io/nvidia/pytorch:22.10-py3
-# 21.10 --> 2080ti (11.4)
-# 22.10 --> 3060ti
 
 # ENV Variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -25,7 +23,7 @@ WORKDIR /bert-natural-explanations
 
 ENV NUMBA_CACHE_DIR="/bert-natural-explanations/numba/"
 ENV PYTHONPATH="$PYTHONPATH:/bert-natural-explanations/:/cinnamon_core/:/cinnamon_generic/:/cinnamon_th/"
-ENV WANDB_API_KEY="1f219561a3e4d18fecbfebea26c7ae14faeee25d"
+ENV WANDB_API_KEY=""
 ENV WANDB_DOCKER="nle"
 
 # Project-specific dependencies
