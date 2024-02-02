@@ -16,7 +16,8 @@ class ToSKBSamplerConfig(KBSamplerConfig):
 
         config.epsilon = 0.01
         config.alpha = 0.9
-        config.sampling_size = 5
+        # config.sampling_size = 5
+        config.get('sampling_size').variants = [1, 5, 10, 15]
 
         return config
 
@@ -24,8 +25,10 @@ class ToSKBSamplerConfig(KBSamplerConfig):
     def get_full_config(
             cls
     ):
-        config = cls.get_default()
+        config = super().get_default()
 
+        config.epsilon = 0.01
+        config.alpha = 0.9
         config.sampling_size = -1
 
         return config
