@@ -148,6 +148,8 @@ class LossGainKBSampler(KBSampler):
 
         # [M]
         gain = memory_scores * positive_mask[:, np.newaxis] * gain[:, np.newaxis]
+        gain = np.sum(gain, axis=0)
+
         memory_indices = memory_indices.detach().cpu().numpy()
 
         update_mask = np.minimum(np.sum(positive_mask), 1.0)
