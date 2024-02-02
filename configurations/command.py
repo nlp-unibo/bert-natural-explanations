@@ -6,7 +6,6 @@ from cinnamon_core.core.registry import Registry, register
 from components.command import Command, MultipleRunsCommand
 
 
-# TODO: check if there are additional mappings and fields to add
 class CommandConfig(Configuration):
 
     @classmethod
@@ -19,7 +18,7 @@ class CommandConfig(Configuration):
                    type_hint=Dict[str, str],
                    value={
                        'routine.model.ss_coefficient': 'SS',
-                       'routine.model.kb_sampler.': 'sampling=',
+                       'routine.model.kb_sampler.sampling_size': 'sampling_size',
                        'routine.model.hf_model_name': 'model_card',
                        'routine.data_loader.topics': 'topics',
                        'routine.data_splitter.topics': 'topics',
@@ -34,7 +33,8 @@ class CommandConfig(Configuration):
                        lambda tags: [tag.split('.')[-1] for tag in tags if 'topics=' in tag or 'category=' in tag][0],
                        lambda tags: [tag.split('model_card=')[-1] for tag in tags if 'model_card' in tag][0],
                        lambda tags: 'kb' if len([tag for tag in tags if 'kb' in tag]) else None,
-                       lambda tags: None if not len([tag for tag in tags if 'sampling' in tag]) else [tag for tag in tags if 'sampling' in tag][0],
+                       lambda tags: None if not len([tag for tag in tags if 'sampler' in tag]) else [tag.split('kb_sampler.')[-1] for tag in tags if 'sampler' in tag][0],
+                       lambda tags: None if not len([tag for tag in tags if 'sampling_size' in tag]) else [tag for tag in tags if 'sampling_size' in tag][0],
                        lambda tags: None if not len([tag for tag in tags if 'SS' in tag]) else [tag for tag in tags if 'SS=' in tag][0],
                    ],
                    description='List of tag filters to extract run name fields.')
